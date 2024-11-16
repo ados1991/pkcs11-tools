@@ -1,9 +1,9 @@
 /* A simple (device, inode) struct.
-   Copyright (C) 2003-2021 Free Software Foundation, Inc.
+   Copyright (C) 2003-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -17,15 +17,25 @@
 /* Written by Jim Meyering, 2003.  */
 
 #ifndef DEV_INO_H
-# define DEV_INO_H 1
+#define DEV_INO_H 1
 
-# include <sys/types.h>
-# include <sys/stat.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 struct dev_ino
 {
   ino_t st_ino;
   dev_t st_dev;
 };
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

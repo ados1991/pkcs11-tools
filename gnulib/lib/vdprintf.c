@@ -1,9 +1,9 @@
 /* Formatted output to a file descriptor.
-   Copyright (C) 2009-2021 Free Software Foundation, Inc.
+   Copyright (C) 2009-2024 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
-   published by the Free Software Foundation; either version 3 of the
+   published by the Free Software Foundation, either version 3 of the
    License, or (at your option) any later version.
 
    This file is distributed in the hope that it will be useful,
@@ -24,40 +24,19 @@
 #include <errno.h>
 #include <limits.h>
 #include <stdarg.h>
-#include <stdlib.h>
 
-#include "full-write.h"
-#include "vasnprintf.h"
+#include "intprops.h"
 
 int
 vdprintf (int fd, const char *format, va_list args)
 {
-  char buf[2000];
-  char *output;
-  size_t len;
-  size_t lenbuf = sizeof (buf);
+  off64_t ret = vdzprintf (fd, format, args);
 
-  output = vasnprintf (buf, &lenbuf, format, args);
-  len = lenbuf;
-
-  if (!output)
-    return -1;
-
-  if (full_write (fd, output, len) < len)
-    {
-      if (output != buf)
-        free (output);
-      return -1;
-    }
-
-  if (output != buf)
-    free (output);
-
-  if (len > INT_MAX)
+  if (TYPE_MAXIMUM (off64_t) > INT_MAX && ret > INT_MAX)
     {
       errno = EOVERFLOW;
       return -1;
     }
 
-  return len;
+  return ret;
 }

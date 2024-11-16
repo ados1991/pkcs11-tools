@@ -1,9 +1,9 @@
 /* Test of create_pipe_in/wait_subprocess.
-   Copyright (C) 2020-2021 Free Software Foundation, Inc.
+   Copyright (C) 2020-2024 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3, or (at your option)
+   the Free Software Foundation, either version 3, or (at your option)
    any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -20,7 +20,6 @@
 #include "wait-process.h"
 
 #include <errno.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -51,7 +50,7 @@ main ()
           (i == 0 ? SRCDIR "executable-script" : SRCDIR "executable-script.sh");
         const char *prog_argv[2] = { prog_path, NULL };
 
-        pid = create_pipe_in (progname, prog_argv[0], prog_argv, NULL,
+        pid = create_pipe_in (progname, prog_argv[0], prog_argv, NULL, NULL,
                               NULL, false, true, false, fd);
         if (pid >= 0)
           {
@@ -71,6 +70,8 @@ main ()
 #if defined _WIN32 && !defined __CYGWIN__
   /* On native Windows, scripts - even with '#!' marker - are not executable.
      Only .bat and .cmd files are.  */
+  if (test_exit_status != EXIT_SUCCESS)
+    return test_exit_status;
   fprintf (stderr, "Skipping test: scripts are not executable on this platform.\n");
   return 77;
 #else
@@ -79,7 +80,7 @@ main ()
     const char *prog_path = SRCDIR "executable-shell-script";
     const char *prog_argv[2] = { prog_path, NULL };
 
-    pid = create_pipe_in (progname, prog_argv[0], prog_argv, NULL,
+    pid = create_pipe_in (progname, prog_argv[0], prog_argv, NULL, NULL,
                           NULL, false, true, false, fd);
     ASSERT (pid >= 0);
     ASSERT (fd[0] > STDERR_FILENO);
@@ -99,6 +100,6 @@ main ()
     ASSERT (fclose (fp) == 0);
   }
 
-  return 0;
+  return test_exit_status;
 #endif
 }

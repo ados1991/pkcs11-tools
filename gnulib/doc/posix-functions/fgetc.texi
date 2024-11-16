@@ -1,10 +1,12 @@
 @node fgetc
-@section @code{fgetc}
+@subsection @code{fgetc}
 @findex fgetc
 
-POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9699919799/functions/fgetc.html}
+POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9799919799/functions/fgetc.html}
 
 Gnulib module: stdio, nonblocking
+@mindex stdio
+@mindex nonblocking
 
 Portability problems fixed by Gnulib module @code{stdio}, together with module @code{nonblocking}:
 @itemize

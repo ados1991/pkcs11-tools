@@ -1,10 +1,10 @@
 /* backupfile.c -- make Emacs style backup file names
 
-   Copyright 2017-2021 Free Software Foundation, Inc.
+   Copyright 2017-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -70,7 +70,7 @@ ARGMATCH_VERIFY (backup_args, backup_types);
 enum backup_type
 get_version (char const *context, char const *version)
 {
-  if (version == 0 || *version == 0)
+  if (version == NULL || *version == 0)
     return numbered_existing_backups;
   else
     return XARGMATCH (context, version, backup_args, backup_types);

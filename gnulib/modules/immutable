@@ -11,7 +11,9 @@ m4/nocrash.m4
 
 Depends-on:
 stdint
+pathmax
 open
+once
 ssfmalloc
 
 configure.ac:

@@ -16,10 +16,11 @@ lib/allocator.h
 lib/allocator.c
 lib/readlink.c
 lib/stat.c
+lib/stat-time.h
+lib/stat-time.c
 lib/canonicalize-lgpl.c
 lib/scratch_buffer.h
 lib/malloc/scratch_buffer.h
-lib/malloc/scratch_buffer_dupfree.c
 lib/malloc/scratch_buffer_grow.c
 lib/malloc/scratch_buffer_grow_preserve.c
 lib/malloc/scratch_buffer_set_array_size.c
@@ -39,7 +40,6 @@ m4/largefile.m4
 m4/malloca.m4
 m4/canonicalize.m4
 m4/lstat.m4
-m4/eealloc.m4
 m4/environ.m4
 m4/free.m4
 m4/malloc.m4
@@ -48,31 +48,35 @@ m4/rawmemchr.m4
 m4/readlink.m4
 m4/realloc.m4
 m4/relocatable-lib.m4
+m4/build-to-host.m4
 m4/setenv.m4
 
 Depends-on:
+alignasof
+assert-h
 c99
 double-slash-root
 eloop-threshold
 environ
 errno
+extern-inline
 fcntl-h
 filename
 idx
 intprops
 largefile
 libc-config
+limits-h
 pathmax
 ssize_t
-stdalign
 stdbool
 stddef
+stdckdint
 stdint
 stdlib
 string
 sys_stat
 unistd
-verify
 xalloc-oversized
 
 configure.ac-early:
@@ -82,7 +86,7 @@ configure.ac:
 AC_REQUIRE([AC_C_RESTRICT])
 gl_FUNC_READLINK_SEPARATE
 gl_CANONICALIZE_LGPL_SEPARATE
-gl_FUNC_MALLOC_POSIX
+AC_REQUIRE([gl_FUNC_MALLOC_POSIX])
 gl_FUNC_REALLOC_POSIX
 gl_FUNC_FREE
 gl_FUNC_MEMPCPY

@@ -1,9 +1,9 @@
 /* Test of system-quote module.
-   Copyright (C) 2012-2021 Free Software Foundation, Inc.
+   Copyright (C) 2012-2024 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3, or (at your option)
+   the Free Software Foundation, either version 3, or (at your option)
    any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -26,7 +26,6 @@
 #endif
 
 #include <limits.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,8 +38,6 @@
 #include "macros.h"
 
 #define EXPECTED_DATA_FILE "t-sq-data.tmp"
-
-static int failed;
 
 static void
 check_one (enum system_command_interpreter interpreter, const char *prog,
@@ -94,7 +91,7 @@ check_one (enum system_command_interpreter interpreter, const char *prog,
             {
               fprintf (stderr, "for input = |%s|: system() command failed with status %d: %s\n",
                        input, exitcode, command);
-              failed = 1;
+              test_exit_status = EXIT_FAILURE;
             }
         }
         {
@@ -104,7 +101,7 @@ check_one (enum system_command_interpreter interpreter, const char *prog,
             {
               fprintf (stderr, "for input = |%s|: popen() command failed with status %d: %s\n",
                        input, exitcode, command);
-              failed = 1;
+              test_exit_status = EXIT_FAILURE;
             }
         }
         break;
@@ -137,21 +134,21 @@ check_one (enum system_command_interpreter interpreter, const char *prog,
                         {
                           fprintf (stderr, "for input = |%s|: CreateProcess() command failed with status %d: %s\n",
                                    input, exitcode, command);
-                          failed = 1;
+                          test_exit_status = EXIT_FAILURE;
                         }
                     }
                   else
                     {
                       fprintf (stderr, "for input = |%s|: GetExitCodeProcess failed, GetLastError() = %u\n",
                                input, GetLastError ());
-                      failed = 1;
+                      test_exit_status = EXIT_FAILURE;
                     }
                 }
               else
                 {
                   fprintf (stderr, "for input = |%s|: WaitForSingleObject failed\n",
                            input);
-                  failed = 1;
+                  test_exit_status = EXIT_FAILURE;
                 }
               CloseHandle (pinfo.hProcess);
             }
@@ -159,7 +156,7 @@ check_one (enum system_command_interpreter interpreter, const char *prog,
             {
               fprintf (stderr, "for input = |%s|: CreateProcess failed, GetLastError() = %u\n",
                        input, GetLastError ());
-              failed = 1;
+              test_exit_status = EXIT_FAILURE;
             }
         }
         break;
@@ -346,5 +343,5 @@ main (int argc, char *argv[])
   /* Clean up.  */
   unlink (EXPECTED_DATA_FILE);
 
-  return failed;
+  return test_exit_status;
 }

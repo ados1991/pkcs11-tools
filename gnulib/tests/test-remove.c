@@ -1,9 +1,9 @@
 /* Tests of remove.
-   Copyright (C) 2009-2021 Free Software Foundation, Inc.
+   Copyright (C) 2009-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -86,6 +86,8 @@ main (void)
      symlink.  */
   if (symlink (BASE "dir", BASE "link") != 0)
     {
+      if (test_exit_status != EXIT_SUCCESS)
+        return test_exit_status;
       fputs ("skipping test: symlinks not supported on this file system\n",
              stderr);
       return 77;
@@ -121,5 +123,5 @@ main (void)
   ASSERT (remove (BASE "link") == 0);
   ASSERT (remove (BASE "file") == 0);
 
-  return 0;
+  return test_exit_status;
 }

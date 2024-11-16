@@ -1,10 +1,11 @@
 @node fseek
-@section @code{fseek}
+@subsection @code{fseek}
 @findex fseek
 
-POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9699919799/functions/fseek.html}
+POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9799919799/functions/fseek.html}
 
 Gnulib module: fseek
+@mindex fseek
 
 Portability problems fixed by Gnulib:
 @itemize
@@ -20,6 +21,6 @@ On Windows platforms (excluding Cygwin), this function does not set @code{errno}
 upon failure.
 @item
 On platforms where @code{long} is a 32-bit type, @code{fseek} does not work
-correctly with files larger than 2 GB, even when the @code{AC_SYS_LARGEFILE}
+correctly with files 2 GiB and larger, even when the @code{AC_SYS_LARGEFILE}
 macro is used.  The fix is to use @code{fseeko} instead.
 @end itemize

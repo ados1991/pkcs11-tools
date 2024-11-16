@@ -1,10 +1,10 @@
 /* Change the ownership and mode bits of a directory.
 
-   Copyright (C) 2006-2021 Free Software Foundation, Inc.
+   Copyright (C) 2006-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -32,6 +32,12 @@
 # define HAVE_FCHMOD 0
 # undef fchmod
 # define fchmod(fd, mode) (-1)
+#endif
+
+#ifndef HAVE_FCHOWN
+# define HAVE_FCHOWN 0
+# undef fchown
+# define fchown(fd, owner, group) (-1)
 #endif
 
 /* Change the ownership and mode bits of a directory.  If FD is
@@ -94,7 +100,7 @@ dirchownmod (int fd, char const *dir, mode_t mkdir_mode,
           if ((owner != (uid_t) -1 && owner != st.st_uid)
               || (group != (gid_t) -1 && group != st.st_gid))
             {
-              result = (0 <= fd
+              result = (HAVE_FCHOWN && 0 <= fd
                         ? fchown (fd, owner, group)
                         : mkdir_mode != (mode_t) -1
                         ? lchown (dir, owner, group)

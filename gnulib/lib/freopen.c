@@ -1,9 +1,9 @@
 /* Open a stream to a file.
-   Copyright (C) 2007-2021 Free Software Foundation, Inc.
+   Copyright (C) 2007-2024 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
-   published by the Free Software Foundation; either version 3 of the
+   published by the Free Software Foundation, either version 3 of the
    License, or (at your option) any later version.
 
    This file is distributed in the hope that it will be useful,
@@ -35,9 +35,13 @@ orig_freopen (const char *filename, const char *mode, FILE *stream)
 }
 
 /* Specification.  */
+#ifdef __osf__
 /* Write "stdio.h" here, not <stdio.h>, otherwise OSF/1 5.1 DTK cc eliminates
    this include because of the preliminary #include <stdio.h> above.  */
-#include "stdio.h"
+# include "stdio.h"
+#else
+# include <stdio.h>
+#endif
 
 #include <fcntl.h>
 #include <string.h>

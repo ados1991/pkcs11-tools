@@ -1,10 +1,10 @@
 /* Determine the program name of a given process.
-   Copyright (C) 2016-2021 Free Software Foundation, Inc.
+   Copyright (C) 2016-2024 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2019.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
-   published by the Free Software Foundation; either version 3 of the
+   published by the Free Software Foundation, either version 3 of the
    License, or (at your option) any later version.
 
    This file is distributed in the hope that it will be useful,
@@ -47,6 +47,12 @@
 # include <AvailabilityMacros.h>
 # if MAC_OS_X_VERSION_MAX_ALLOWED >= 1050
 #  include <libproc.h>
+#  if MAC_OS_X_VERSION_MIN_REQUIRED < 1050
+/* Mac OS X versions < 10.5 don't have this function.  Therefore declare it as
+   weak, in order to avoid a runtime error when the binaries are run on these
+   older versions.  */
+extern int proc_pidinfo (int, int, uint64_t, void *, int) WEAK_IMPORT_ATTRIBUTE;
+#  endif
 # endif
 #endif
 
@@ -276,11 +282,16 @@ get_progname_of (pid_t pid)
 
   /* Mac OS X >= 10.7 has PROC_PIDT_SHORTBSDINFO.  */
 #  if defined PROC_PIDT_SHORTBSDINFO
-  struct proc_bsdshortinfo info;
+#   if MAC_OS_X_VERSION_MIN_REQUIRED < 1050
+  if (proc_pidinfo != NULL) /* at runtime Mac OS X >= 10.5 ? */
+#   endif
+    {
+      struct proc_bsdshortinfo info;
 
-  if (proc_pidinfo (pid, PROC_PIDT_SHORTBSDINFO, 0, &info, sizeof (info))
-      == sizeof (info))
-    return strdup (info.pbsi_comm);
+      if (proc_pidinfo (pid, PROC_PIDT_SHORTBSDINFO, 0, &info, sizeof (info))
+          == sizeof (info))
+        return strdup (info.pbsi_comm);
+    }
 #  endif
 
 #  if MAC_OS_X_VERSION_MIN_REQUIRED < 1070
@@ -289,10 +300,15 @@ get_progname_of (pid_t pid)
      32-bit and 64-bit environments, and the kernel of Mac OS X 10.5 knows
      only about the 32-bit 'struct proc_bsdinfo'.  Fortunately all the info
      we need is in the first part, which is the same in 32-bit and 64-bit.  */
-  struct proc_bsdinfo info;
+#   if MAC_OS_X_VERSION_MIN_REQUIRED < 1050
+  if (proc_pidinfo != NULL) /* at runtime Mac OS X >= 10.5 ? */
+#   endif
+    {
+      struct proc_bsdinfo info;
 
-  if (proc_pidinfo (pid, PROC_PIDTBSDINFO, 0, &info, 128) == 128)
-    return strdup (info.pbi_comm);
+      if (proc_pidinfo (pid, PROC_PIDTBSDINFO, 0, &info, 128) == 128)
+        return strdup (info.pbi_comm);
+    }
 #  endif
 
 # endif

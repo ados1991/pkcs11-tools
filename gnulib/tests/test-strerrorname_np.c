@@ -1,10 +1,10 @@
 /* Test of strerrorname_np() function.
 
-   Copyright (C) 2020-2021 Free Software Foundation, Inc.
+   Copyright (C) 2020-2024 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3, or (at your option)
+   the Free Software Foundation, either version 3, or (at your option)
    any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -306,7 +306,7 @@ main (void)
   ASSERT (strcmp (strerrorname_np (EBADCPU), "EBADCPU") == 0);
   #endif
   /* Linux, IRIX, Solaris, Cygwin */
-  #if defined EBADE
+  #if defined EBADE && EBADE != ECKSUM
   ASSERT (strcmp (strerrorname_np (EBADE), "EBADE") == 0);
   #endif
   /* Minix */
@@ -338,7 +338,7 @@ main (void)
   ASSERT (strcmp (strerrorname_np (EBADMODE), "EBADMODE") == 0);
   #endif
   /* Linux, IRIX, Solaris, Cygwin */
-  #if defined EBADR
+  #if defined EBADR && EBADR != EFRAGS
   ASSERT (strcmp (strerrorname_np (EBADR), "EBADR") == 0);
   #endif
   /* Minix */
@@ -409,6 +409,10 @@ main (void)
   #if defined ECKPT
   ASSERT (strcmp (strerrorname_np (ECKPT), "ECKPT") == 0);
   #endif
+  /* Solaris */
+  #if defined ECKSUM
+  ASSERT (strcmp (strerrorname_np (ECKSUM), "ECKSUM") == 0);
+  #endif
   /* IRIX */
   #if defined ECLOCKCPU
   ASSERT (strcmp (strerrorname_np (ECLOCKCPU), "ECLOCKCPU") == 0);
@@ -466,7 +470,7 @@ main (void)
   ASSERT (strcmp (strerrorname_np (EDIED), "EDIED") == 0);
   #endif
   /* IRIX */
-  #if defined EDIRCORRUPTED
+  #if defined EDIRCORRUPTED && EDIRCORRUPTED != EFSCORRUPTED
   ASSERT (strcmp (strerrorname_np (EDIRCORRUPTED), "EDIRCORRUPTED") == 0);
   #endif
   /* FreeBSD */
@@ -490,7 +494,7 @@ main (void)
   ASSERT (strcmp (strerrorname_np (EDONTREPLY), "EDONTREPLY") == 0);
   #endif
   /* FreeBSD */
-  #if defined EDOOFUS
+  #if defined EDOOFUS && EDOOFUS != EINVAL
   ASSERT (strcmp (strerrorname_np (EDOOFUS), "EDOOFUS") == 0);
   #endif
   /* Linux, HP-UX, Cygwin */
@@ -568,6 +572,10 @@ main (void)
   /* Haiku */
   #if defined EFPOS
   ASSERT (strcmp (strerrorname_np (EFPOS), "EFPOS") == 0);
+  #endif
+  /* Solaris */
+  #if defined EFRAGS
+  ASSERT (strcmp (strerrorname_np (EFRAGS), "EFRAGS") == 0);
   #endif
   /* IRIX */
   #if defined EFSCORRUPTED
@@ -1018,7 +1026,7 @@ main (void)
   ASSERT (strcmp (strerrorname_np (ENMFILE), "ENMFILE") == 0);
   #endif
   /* Linux, IRIX, Solaris, Cygwin */
-  #if defined ENOANO
+  #if defined ENOANO && ENOANO != ENOKEY
   ASSERT (strcmp (strerrorname_np (ENOANO), "ENOANO") == 0);
   #endif
   /* IRIX */
@@ -1117,7 +1125,7 @@ main (void)
   #if defined ENOSHARE
   ASSERT (strcmp (strerrorname_np (ENOSHARE), "ENOSHARE") == 0);
   #endif
-  /* HP-UX, OSF/1 */
+  /* Linux, HP-UX, OSF/1 */
   #if defined ENOSYM
   ASSERT (strcmp (strerrorname_np (ENOSYM), "ENOSYM") == 0);
   #endif
@@ -1241,7 +1249,7 @@ main (void)
   #if defined EREMOTEIO
   ASSERT (strcmp (strerrorname_np (EREMOTEIO), "EREMOTEIO") == 0);
   #endif
-  /* HP-UX */
+  /* Linux, HP-UX */
   #if defined EREMOTERELEASE
   ASSERT (strcmp (strerrorname_np (EREMOTERELEASE), "EREMOTERELEASE") == 0);
   #endif
@@ -1341,5 +1349,5 @@ main (void)
   ASSERT (strerrorname_np (20200830) == NULL);
   ASSERT (strerrorname_np (-714) == NULL);
 
-  return 0;
+  return test_exit_status;
 }

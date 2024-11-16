@@ -1,9 +1,9 @@
 /* Test of searching in a string.
-   Copyright (C) 2007-2021 Free Software Foundation, Inc.
+   Copyright (C) 2007-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -212,6 +212,14 @@ main ()
     free (haystack);
   }
 
+  /* Test case from Yves Bastide.
+     <https://www.openwall.com/lists/musl/2014/04/18/2>  */
+  {
+    const char input[] = "playing play play play always";
+    const char *result = c_strstr (input, "play play play");
+    ASSERT (result == input + 8);
+  }
+
   /* Test long needles.  */
   {
     size_t m = 1024;
@@ -234,5 +242,5 @@ main ()
     free (haystack);
   }
 
-  return 0;
+  return test_exit_status;
 }

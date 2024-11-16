@@ -1,9 +1,9 @@
 /* Tests of mkdirat.
-   Copyright (C) 2009-2021 Free Software Foundation, Inc.
+   Copyright (C) 2009-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -25,7 +25,6 @@ SIGNATURE_CHECK (mkdirat, int, (int, char const *, mode_t));
 
 #include <fcntl.h>
 #include <errno.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -94,5 +93,5 @@ main (_GL_UNUSED int argc, char *argv[])
   ASSERT (rmdir (BASE "dir1") == 0);
   ASSERT (rmdir (BASE "dir2") == 0);
 
-  return result;
+  return (result ? result : test_exit_status);
 }

@@ -1,10 +1,10 @@
 /* Construct a regular expression from a literal string.
-   Copyright (C) 1995, 2010-2021 Free Software Foundation, Inc.
+   Copyright (C) 1995, 2010-2024 Free Software Foundation, Inc.
    Written by Bruno Haible <haible@clisp.cons.org>, 2010.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -22,14 +22,19 @@
 
 #include <string.h>
 
-#include "mbuiter.h"
+#if GNULIB_MCEL_PREFER
+# include "mcel.h"
+#else
+# include "mbuiter.h"
+#endif
+
 #include "xalloc.h"
 
 /* Characters that are special in a BRE.  */
-static const char bre_special[] = "$^.*[]\\";
+static const char bre_special[] = "$^.*[\\";
 
 /* Characters that are special in an ERE.  */
-static const char ere_special[] = "$^.*[]\\+?{}()|";
+static const char ere_special[] = "$^.*[\\+?{()|";
 
 struct regex_quote_spec
 regex_quote_spec_posix (int cflags, bool anchored)
@@ -138,6 +143,16 @@ regex_quote_length (const char *string, const struct regex_quote_spec *spec)
     length += 2; /* for '^' at the beginning and '$' at the end */
   if (spec->multibyte)
     {
+#if GNULIB_MCEL_PREFER
+      char const *iter = string;
+      for (mcel_t g; *iter; iter += g.len)
+        {
+          g = mcel_scanz (iter);
+          /* We know that special contains only ASCII characters.  */
+          length += g.len == 1 && strchr (special, *iter);
+        }
+      length += iter - string;
+#else
       mbui_iterator_t iter;
 
       for (mbui_init (iter, string); mbui_avail (iter); mbui_advance (iter))
@@ -148,6 +163,7 @@ regex_quote_length (const char *string, const struct regex_quote_spec *spec)
             length += 1;
           length += mb_len (mbui_cur (iter));
         }
+#endif
     }
   else
     {
@@ -173,6 +189,17 @@ regex_quote_copy (char *p, const char *string, const struct regex_quote_spec *sp
     *p++ = '^';
   if (spec->multibyte)
     {
+#if GNULIB_MCEL_PREFER
+      for (char const *iter = string; *iter; )
+        {
+          mcel_t g = mcel_scanz (iter);
+          *p = '\\';
+          /* We know that special contains only ASCII characters.  */
+          p += g.len == 1 && strchr (special, *iter);
+          p = mempcpy (p, iter, g.len);
+          iter += g.len;
+        }
+#else
       mbui_iterator_t iter;
 
       for (mbui_init (iter, string); mbui_avail (iter); mbui_advance (iter))
@@ -184,6 +211,7 @@ regex_quote_copy (char *p, const char *string, const struct regex_quote_spec *sp
           memcpy (p, mbui_cur_ptr (iter), mb_len (mbui_cur (iter)));
           p += mb_len (mbui_cur (iter));
         }
+#endif
     }
   else
     {

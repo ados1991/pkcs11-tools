@@ -1,8 +1,10 @@
-# iconv_open-utf.m4 serial 4
-dnl Copyright (C) 2007-2021 Free Software Foundation, Inc.
+# iconv_open-utf.m4
+# serial 6
+dnl Copyright (C) 2007-2024 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 # A placeholder to ensure that this m4 file gets included by aclocal.
 AC_DEFUN([gl_FUNC_ICONV_OPEN_UTF], [])
@@ -18,7 +20,7 @@ AC_DEFUN([gl_FUNC_ICONV_OPEN_UTF_SUPPORT],
     AC_CACHE_CHECK([whether iconv supports conversion between UTF-8 and UTF-{16,32}{BE,LE}],
       [gl_cv_func_iconv_supports_utf],
       [
-        save_LIBS="$LIBS"
+        saved_LIBS="$LIBS"
         LIBS="$LIBS $LIBICONV"
         AC_RUN_IFELSE(
           [AC_LANG_SOURCE([[
@@ -220,14 +222,13 @@ int main ()
            else
 changequote(,)dnl
              case "$host_os" in
-               *-musl*) gl_cv_func_iconv_supports_utf="guessing yes" ;;
-               solaris2.9 | solaris2.1[0-9])
-                        gl_cv_func_iconv_supports_utf="guessing yes" ;;
+               *-musl* | midipix*)           gl_cv_func_iconv_supports_utf="guessing yes" ;;
+               solaris2.9 | solaris2.1[0-9]) gl_cv_func_iconv_supports_utf="guessing yes" ;;
              esac
 changequote([,])dnl
            fi
           ])
-        LIBS="$save_LIBS"
+        LIBS="$saved_LIBS"
       ])
   fi
 ])

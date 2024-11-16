@@ -1,10 +1,10 @@
 /* Stack overflow handling.
 
-   Copyright (C) 2002, 2004, 2006, 2008-2021 Free Software Foundation, Inc.
+   Copyright (C) 2002, 2004, 2006, 2008-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -52,7 +52,6 @@
 #include <sigsegv.h>
 
 #include "exitfail.h"
-#include "getprogname.h"
 #include "idx.h"
 #include "ignore-value.h"
 
@@ -131,7 +130,7 @@ null_action (_GL_UNUSED int signo)
 }
 
 /* Pacify GCC 9.3.1, which otherwise would complain about segv_handler.  */
-# if 4 < __GNUC__ + (6 <= __GNUC_MINOR__)
+# if _GL_GNUC_PREREQ (4, 6)
 #  pragma GCC diagnostic ignored "-Wsuggest-attribute=pure"
 # endif
 

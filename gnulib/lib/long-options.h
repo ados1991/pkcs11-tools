@@ -1,10 +1,10 @@
 /* long-options.h -- declaration for --help- and --version-handling function.
-   Copyright (C) 1993-1994, 1998-1999, 2003, 2009-2021 Free Software
+   Copyright (C) 1993-1994, 1998-1999, 2003, 2009-2024 Free Software
    Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -20,7 +20,10 @@
 #ifndef LONG_OPTIONS_H_
 # define LONG_OPTIONS_H_ 1
 
-# include <stdbool.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 void parse_long_options (int _argc,
                          char **_argv,
@@ -38,5 +41,10 @@ void parse_gnu_standard_options_only (int argc,
                                       bool scan_all,
                                       void (*usage_func) (int),
                                       /* const char *author1, ...*/ ...);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* LONG_OPTIONS_H_ */

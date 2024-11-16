@@ -1,10 +1,10 @@
 /*
- * Copyright (C) 2005, 2010-2021 Free Software Foundation, Inc.
+ * Copyright (C) 2005, 2010-2024 Free Software Foundation, Inc.
  * Written by Simon Josefsson
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3, or (at your option)
+ * the Free Software Foundation, either version 3, or (at your option)
  * any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -38,9 +38,9 @@ main (int argc, char *argv[])
   /* Test vectors from RFC 1319. */
 
   {
-    char *in = "abcdefghijklmnopqrstuvwxyz";
+    const char *in = "abcdefghijklmnopqrstuvwxyz";
     size_t inlen = strlen (in);
-    char *expect =
+    const char *expect =
       "\x4e\x8d\xdf\xf3\x65\x02\x92\xab\x5a\x41\x08\xc3\xaa\x47\x94\x0b";
     char out[16];
     const char *p;

@@ -1,11 +1,11 @@
 /* Save the list of files in a directory in a string.
 
-   Copyright (C) 1997, 1999, 2001, 2003, 2005, 2009-2021 Free Software
+   Copyright (C) 1997, 1999, 2001, 2003, 2005, 2009-2024 Free Software
    Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -21,8 +21,18 @@
 #ifndef _GL_SAVEDIR_H
 #define _GL_SAVEDIR_H
 
+/* This file uses _GL_ATTRIBUTE_MALLOC.  */
+#if !_GL_CONFIG_H_INCLUDED
+ #error "Please include config.h first."
+#endif
+
 #include <dirent.h>
 #include <stdlib.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 enum savedir_option
   {
@@ -40,5 +50,10 @@ char *streamsavedir (DIR *, enum savedir_option)
   _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE;
 char *savedir (char const *, enum savedir_option)
   _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE;
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

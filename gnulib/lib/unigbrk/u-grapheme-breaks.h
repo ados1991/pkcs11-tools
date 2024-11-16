@@ -1,12 +1,12 @@
 /* Grapheme cluster break function.
-   Copyright (C) 2010-2021 Free Software Foundation, Inc.
+   Copyright (C) 2010-2024 Free Software Foundation, Inc.
    Written by Ben Pfaff <blp@cs.stanford.edu>, 2010.
 
    This file is free software.
    It is dual-licensed under "the GNU LGPLv3+ or the GNU GPLv2+".
    You can redistribute it and/or modify it under either
      - the terms of the GNU Lesser General Public License as published
-       by the Free Software Foundation; either version 3, or (at your
+       by the Free Software Foundation, either version 3, or (at your
        option) any later version, or
      - the terms of the GNU General Public License as published by the
        Free Software Foundation; either version 2, or (at your option)
@@ -23,6 +23,9 @@
    License and of the GNU General Public License along with this
    program.  If not, see <https://www.gnu.org/licenses/>.  */
 
+/* This file implements section 3 "Grapheme Cluster Boundaries"
+   of Unicode Standard Annex #29 <https://www.unicode.org/reports/tr29/>.  */
+
 void
 FUNC (const UNIT *s, size_t n, char *p)
 {
@@ -34,10 +37,25 @@ FUNC (const UNIT *s, size_t n, char *p)
          -1 at the very beginning of the string.  */
       int last_char_prop = -1;
 
-      /* Grapheme Cluster break property of the last complex character.
-         -1 at the very beginning of the string.  */
-      int last_compchar_prop = -1;
+      /* True if the last character ends a sequence of Indic_Conjunct_Break
+         values:  consonant {extend|linker}*  */
+      bool incb_consonant_extended = false;
+      /* True if the last character ends a sequence of Indic_Conjunct_Break
+         values:  consonant {extend|linker}* linker  */
+      bool incb_consonant_extended_linker = false;
+      /* True if the last character ends a sequence of Indic_Conjunct_Break
+         values:  consonant {extend|linker}* linker {extend|linker}*  */
+      bool incb_consonant_extended_linker_extended = false;
 
+      /* True if the last character ends an emoji modifier sequence
+         \p{Extended_Pictographic} Extend*.  */
+      bool emoji_modifier_sequence = false;
+      /* True if the last character was immediately preceded by an
+         emoji modifier sequence   \p{Extended_Pictographic} Extend*.  */
+      bool emoji_modifier_sequence_before_last_char = false;
+
+      /* Number of consecutive regional indicator (RI) characters seen
+         immediately before the current point.  */
       size_t ri_count = 0;
 
       /* Don't break inside multibyte characters.  */
@@ -48,6 +66,7 @@ FUNC (const UNIT *s, size_t n, char *p)
           ucs4_t uc;
           int count = U_MBTOUC (&uc, s, s_end - s);
           int prop = uc_graphemeclusterbreak_property (uc);
+          int incb = uc_indic_conjunct_break (uc);
 
           /* Break at the start of the string (GB1).  */
           if (last_char_prop < 0)
@@ -88,35 +107,47 @@ FUNC (const UNIT *s, size_t n, char *p)
               /* No break after Prepend characters (GB9b).  */
               else if (last_char_prop == GBP_PREPEND)
                 /* *p = 0 */;
-              /* No break within emoji modifier sequences (GB10).  */
-              else if ((last_compchar_prop == GBP_EB
-                        || last_compchar_prop == GBP_EBG)
-                       && prop == GBP_EM)
+              /* No break within certain combinations of Indic_Conjunct_Break
+                 values: Between
+                   consonant {extend|linker}* linker {extend|linker}*
+                 and
+                   consonant
+                 (GB9c).  */
+              else if (incb_consonant_extended_linker_extended
+                       && incb == UC_INDIC_CONJUNCT_BREAK_CONSONANT)
                 /* *p = 0 */;
-              /* No break within emoji zwj sequences (GB11).  */
+              /* No break within emoji modifier sequences or emoji zwj sequences
+                 (GB11).  */
               else if (last_char_prop == GBP_ZWJ
-                       && (prop == GBP_GAZ
-                           || prop == GBP_EBG))
+                       && emoji_modifier_sequence_before_last_char
+                       && uc_is_property_extended_pictographic (uc))
                 /* *p = 0 */;
               /* No break between RI if there is an odd number of RI
                  characters before (GB12, GB13).  */
-              else if (prop == GBP_RI)
-                {
-                  if (ri_count % 2 == 0)
-                    *p = 1;
-                  /* else *p = 0; */
-                }
-              /* Break everywhere (GBP999).  */
+              else if (prop == GBP_RI && (ri_count % 2) != 0)
+                /* *p = 0 */;
+              /* Break everywhere (GB999).  */
               else
                 *p = 1;
             }
 
-          last_char_prop = prop;
+          incb_consonant_extended_linker =
+            incb_consonant_extended && incb == UC_INDIC_CONJUNCT_BREAK_LINKER;
+          incb_consonant_extended_linker_extended =
+            (incb_consonant_extended_linker
+             || (incb_consonant_extended_linker_extended
+                 && incb >= UC_INDIC_CONJUNCT_BREAK_LINKER));
+          incb_consonant_extended =
+            (incb == UC_INDIC_CONJUNCT_BREAK_CONSONANT
+             || (incb_consonant_extended
+                 && incb >= UC_INDIC_CONJUNCT_BREAK_LINKER));
 
-          if (!(prop == GBP_EXTEND
-                && (last_compchar_prop == GBP_EB
-                    || last_compchar_prop == GBP_EBG)))
-            last_compchar_prop = prop;
+          emoji_modifier_sequence_before_last_char = emoji_modifier_sequence;
+          emoji_modifier_sequence =
+            (emoji_modifier_sequence && prop == GBP_EXTEND)
+            || uc_is_property_extended_pictographic (uc);
+
+          last_char_prop = prop;
 
           if (prop == GBP_RI)
             ri_count++;

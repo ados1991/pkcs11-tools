@@ -1,11 +1,11 @@
 /* Self tests for base32.
-   Copyright (C) 2004, 2008-2021 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2008-2024 Free Software Foundation, Inc.
    Based on the tests for base64 written by Simon Josefsson.
    Adapted for base32 by Gijs van Tulder.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -21,7 +21,6 @@
 #include "base32.h"
 
 #include <stddef.h>
-#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
@@ -257,5 +256,20 @@ main (void)
   ok = base32_decode_alloc_ctx (NULL, "AABBAA=A", 8, &p, &len);
   ASSERT (!ok);
 
-  return 0;
+  ok = base32_decode_alloc_ctx (NULL, "FZ======", 8, &p, &len);
+  ASSERT (!ok);
+
+  ok = base32_decode_alloc_ctx (NULL, "FYXB====", 8, &p, &len);
+  ASSERT (!ok);
+
+  ok = base32_decode_alloc_ctx (NULL, "FYXC5===", 8, &p, &len);
+  ASSERT (!ok);
+
+  ok = base32_decode_alloc_ctx (NULL, "FYXC4LR=", 8, &p, &len);
+  ASSERT (!ok);
+
+  ok = base32_decode_alloc_ctx (NULL, "FZ======FY======", 16, &p, &len);
+  ASSERT (!ok);
+
+  return test_exit_status;
 }

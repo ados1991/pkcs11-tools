@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1994-2002, 2005, 2008-2021 Free Software Foundation,
+/* Copyright (C) 1991, 1994-2002, 2005, 2008-2024 Free Software Foundation,
    Inc.
    This file is part of the GNU C Library.
 
@@ -37,7 +37,7 @@
 #ifdef _LIBC
 # include <bits/libc-lock.h>
 #else /* !_LIBC */
-# include "glthread/lock.h"
+# include "glthread/once.h"
 # include "glthread/tls.h"
 # define __libc_once_define(CLASS, NAME) gl_once_define (CLASS, NAME)
 # define __libc_once(NAME, INIT) gl_once ((NAME), (INIT))

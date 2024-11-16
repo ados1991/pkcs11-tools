@@ -1,5 +1,5 @@
 #!/bin/sh
-: ${srcdir=.}
+: "${srcdir=.}"
 . "$srcdir/init.sh"; path_prepend_ .
 
 too_big=99999999999999999999999999999999999999999999999999999999999999999999
@@ -63,5 +63,8 @@ MiB->1048576 ()
 EOF
 
 compare expected out || result=1
+
+# Other misc tests.
+${CHECKER} test-xstrtoll || result=1
 
 Exit $result

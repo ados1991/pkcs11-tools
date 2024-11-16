@@ -1,9 +1,9 @@
 /* Test of POSIX compatible vasnprintf() and asnprintf() functions.
-   Copyright (C) 2007-2021 Free Software Foundation, Inc.
+   Copyright (C) 2007-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -27,11 +27,13 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <wchar.h>
 
 #include "macros.h"
 #include "minus-zero.h"
 #include "infinity.h"
 #include "nan.h"
+#include "snan.h"
 
 /* The SGI MIPS floating-point format does not distinguish 0.0 and -0.0.  */
 static int
@@ -246,6 +248,19 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
     ASSERT (length == strlen (result));
     free (result);
   }
+#if HAVE_SNAND
+  { /* Signalling NaN.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%a %d", SNaNd (), 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 0)
+            && strcmp (result + strlen (result) - 3, " 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+#endif
 
   { /* Rounding near the decimal point.  */
     size_t length;
@@ -349,6 +364,32 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
             || strcmp (result, "  0x3.8p-1 33") == 0
             || strcmp (result, "    0x7p-2 33") == 0
             || strcmp (result, "    0xep-3 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Width given as argument.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%*a %d", 10, 1.75, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "  0x1.cp+0 33") == 0
+            || strcmp (result, "  0x3.8p-1 33") == 0
+            || strcmp (result, "    0x7p-2 33") == 0
+            || strcmp (result, "    0xep-3 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Negative width given as argument (cf. FLAG_LEFT below).  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%*a %d", -10, 1.75, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "0x1.cp+0   33") == 0
+            || strcmp (result, "0x3.8p-1   33") == 0
+            || strcmp (result, "0x7p-2     33") == 0
+            || strcmp (result, "0xep-3     33") == 0);
     ASSERT (length == strlen (result));
     free (result);
   }
@@ -535,6 +576,8 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
     char *result =
       my_asnprintf (NULL, &length, "%La %d", Infinityl (), 33, 44, 55);
     ASSERT (result != NULL);
+    /* Note: This assertion fails under valgrind.
+       Reported at <https://bugs.kde.org/show_bug.cgi?id=424044>.  */
     ASSERT (strcmp (result, "inf 33") == 0);
     ASSERT (length == strlen (result));
     free (result);
@@ -561,10 +604,23 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
     ASSERT (length == strlen (result));
     free (result);
   }
+#if HAVE_SNANL
+  { /* Signalling NaN.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%La %d", SNaNl (), 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 0)
+            && strcmp (result + strlen (result) - 3, " 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+#endif
 #if CHECK_PRINTF_SAFE && ((defined __ia64 && LDBL_MANT_DIG == 64) || (defined __x86_64__ || defined __amd64__) || (defined __i386 || defined __i386__ || defined _I386 || defined _M_IX86 || defined _X86_)) && !HAVE_SAME_LONG_DOUBLE_AS_DOUBLE
   { /* Quiet NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0xC3333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0xC3333333, 0x00000000) };
     size_t length;
     char *result =
       my_asnprintf (NULL, &length, "%La %d", x.value, 33, 44, 55);
@@ -578,7 +634,7 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
   {
     /* Signalling NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x83333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x83333333, 0x00000000) };
     size_t length;
     char *result =
       my_asnprintf (NULL, &length, "%La %d", x.value, 33, 44, 55);
@@ -592,7 +648,7 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
   /* asnprintf should print something for noncanonical values.  */
   { /* Pseudo-NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x40000001, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x40000001, 0x00000000) };
     size_t length;
     char *result =
       my_asnprintf (NULL, &length, "%La %d", x.value, 33, 44, 55);
@@ -603,7 +659,7 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
   }
   { /* Pseudo-Infinity.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x00000000, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x00000000, 0x00000000) };
     size_t length;
     char *result =
       my_asnprintf (NULL, &length, "%La %d", x.value, 33, 44, 55);
@@ -614,7 +670,7 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
   }
   { /* Pseudo-Zero.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x4004, 0x00000000, 0x00000000) };
+      { .word = LDBL80_WORDS (0x4004, 0x00000000, 0x00000000) };
     size_t length;
     char *result =
       my_asnprintf (NULL, &length, "%La %d", x.value, 33, 44, 55);
@@ -625,7 +681,7 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
   }
   { /* Unnormalized number.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x4000, 0x63333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0x4000, 0x63333333, 0x00000000) };
     size_t length;
     char *result =
       my_asnprintf (NULL, &length, "%La %d", x.value, 33, 44, 55);
@@ -636,7 +692,7 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
   }
   { /* Pseudo-Denormal.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x0000, 0x83333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0x0000, 0x83333333, 0x00000000) };
     size_t length;
     char *result =
       my_asnprintf (NULL, &length, "%La %d", x.value, 33, 44, 55);
@@ -749,6 +805,32 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
             || strcmp (result, "  0x3.8p-1 33") == 0
             || strcmp (result, "    0x7p-2 33") == 0
             || strcmp (result, "    0xep-3 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Width given as argument.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%*La %d", 10, 1.75L, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "  0x1.cp+0 33") == 0
+            || strcmp (result, "  0x3.8p-1 33") == 0
+            || strcmp (result, "    0x7p-2 33") == 0
+            || strcmp (result, "    0xep-3 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Negative width given as argument (cf. FLAG_LEFT below).  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%*La %d", -10, 1.75L, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "0x1.cp+0   33") == 0
+            || strcmp (result, "0x3.8p-1   33") == 0
+            || strcmp (result, "0x7p-2     33") == 0
+            || strcmp (result, "0xep-3     33") == 0);
     ASSERT (length == strlen (result));
     free (result);
   }
@@ -1060,6 +1142,19 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
     ASSERT (length == strlen (result));
     free (result);
   }
+#if HAVE_SNAND
+  { /* Signalling NaN.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%f %d", SNaNd (), 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 0)
+            && strcmp (result + strlen (result) - 3, " 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+#endif
 
   { /* Width.  */
     size_t length;
@@ -1067,6 +1162,26 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
       my_asnprintf (NULL, &length, "%10f %d", 1.75, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (strcmp (result, "  1.750000 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Width given as argument.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%*f %d", 10, 1.75, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "  1.750000 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Negative width given as argument (cf. FLAG_LEFT below).  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%*f %d", -10, 1.75, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "1.750000   33") == 0);
     ASSERT (length == strlen (result));
     free (result);
   }
@@ -1359,10 +1474,23 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
     ASSERT (length == strlen (result));
     free (result);
   }
+#if HAVE_SNANL
+  { /* Signalling NaN.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%Lf %d", SNaNl (), 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 0)
+            && strcmp (result + strlen (result) - 3, " 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+#endif
 #if CHECK_PRINTF_SAFE && ((defined __ia64 && LDBL_MANT_DIG == 64) || (defined __x86_64__ || defined __amd64__) || (defined __i386 || defined __i386__ || defined _I386 || defined _M_IX86 || defined _X86_)) && !HAVE_SAME_LONG_DOUBLE_AS_DOUBLE
   { /* Quiet NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0xC3333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0xC3333333, 0x00000000) };
     size_t length;
     char *result =
       my_asnprintf (NULL, &length, "%Lf %d", x.value, 33, 44, 55);
@@ -1376,7 +1504,7 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
   {
     /* Signalling NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x83333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x83333333, 0x00000000) };
     size_t length;
     char *result =
       my_asnprintf (NULL, &length, "%Lf %d", x.value, 33, 44, 55);
@@ -1390,7 +1518,7 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
   /* asnprintf should print something for noncanonical values.  */
   { /* Pseudo-NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x40000001, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x40000001, 0x00000000) };
     size_t length;
     char *result =
       my_asnprintf (NULL, &length, "%Lf %d", x.value, 33, 44, 55);
@@ -1401,7 +1529,7 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
   }
   { /* Pseudo-Infinity.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x00000000, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x00000000, 0x00000000) };
     size_t length;
     char *result =
       my_asnprintf (NULL, &length, "%Lf %d", x.value, 33, 44, 55);
@@ -1412,7 +1540,7 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
   }
   { /* Pseudo-Zero.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x4004, 0x00000000, 0x00000000) };
+      { .word = LDBL80_WORDS (0x4004, 0x00000000, 0x00000000) };
     size_t length;
     char *result =
       my_asnprintf (NULL, &length, "%Lf %d", x.value, 33, 44, 55);
@@ -1423,7 +1551,7 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
   }
   { /* Unnormalized number.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x4000, 0x63333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0x4000, 0x63333333, 0x00000000) };
     size_t length;
     char *result =
       my_asnprintf (NULL, &length, "%Lf %d", x.value, 33, 44, 55);
@@ -1434,7 +1562,7 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
   }
   { /* Pseudo-Denormal.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x0000, 0x83333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0x0000, 0x83333333, 0x00000000) };
     size_t length;
     char *result =
       my_asnprintf (NULL, &length, "%Lf %d", x.value, 33, 44, 55);
@@ -1451,6 +1579,26 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
       my_asnprintf (NULL, &length, "%10Lf %d", 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (strcmp (result, "  1.750000 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Width given as argument.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%*Lf %d", 10, 1.75L, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "  1.750000 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Negative width given as argument (cf. FLAG_LEFT below).  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%*Lf %d", -10, 1.75L, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "1.750000   33") == 0);
     ASSERT (length == strlen (result));
     free (result);
   }
@@ -1654,6 +1802,19 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
     ASSERT (length == strlen (result));
     free (result);
   }
+#if HAVE_SNAND
+  { /* Signalling NaN.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%F %d", SNaNd (), 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 1)
+            && strcmp (result + strlen (result) - 3, " 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+#endif
 
   { /* FLAG_ZERO.  */
     size_t length;
@@ -1790,6 +1951,19 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
     ASSERT (length == strlen (result));
     free (result);
   }
+#if HAVE_SNANL
+  { /* Signalling NaN.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%LF %d", SNaNl (), 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 1)
+            && strcmp (result + strlen (result) - 3, " 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+#endif
 
   { /* FLAG_ZERO.  */
     size_t length;
@@ -2032,6 +2206,19 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
     ASSERT (length == strlen (result));
     free (result);
   }
+#if HAVE_SNAND
+  { /* Signalling NaN.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%e %d", SNaNd (), 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 0)
+            && strcmp (result + strlen (result) - 3, " 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+#endif
 
   { /* Width.  */
     size_t length;
@@ -2040,6 +2227,28 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
     ASSERT (result != NULL);
     ASSERT (strcmp (result, "   1.750000e+00 33") == 0
             || strcmp (result, "  1.750000e+000 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Width given as argument.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%*e %d", 15, 1.75, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "   1.750000e+00 33") == 0
+            || strcmp (result, "  1.750000e+000 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Negative width given as argument (cf. FLAG_LEFT below).  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%*e %d", -15, 1.75, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "1.750000e+00    33") == 0
+            || strcmp (result, "1.750000e+000   33") == 0);
     ASSERT (length == strlen (result));
     free (result);
   }
@@ -2365,10 +2574,23 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
     ASSERT (length == strlen (result));
     free (result);
   }
+#if HAVE_SNANL
+  { /* Signalling NaN.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%Le %d", SNaNl (), 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 0)
+            && strcmp (result + strlen (result) - 3, " 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+#endif
 #if CHECK_PRINTF_SAFE && ((defined __ia64 && LDBL_MANT_DIG == 64) || (defined __x86_64__ || defined __amd64__) || (defined __i386 || defined __i386__ || defined _I386 || defined _M_IX86 || defined _X86_)) && !HAVE_SAME_LONG_DOUBLE_AS_DOUBLE
   { /* Quiet NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0xC3333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0xC3333333, 0x00000000) };
     size_t length;
     char *result =
       my_asnprintf (NULL, &length, "%Le %d", x.value, 33, 44, 55);
@@ -2380,7 +2602,7 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
   {
     /* Signalling NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x83333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x83333333, 0x00000000) };
     size_t length;
     char *result =
       my_asnprintf (NULL, &length, "%Le %d", x.value, 33, 44, 55);
@@ -2392,7 +2614,7 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
   /* asnprintf should print something even for noncanonical values.  */
   { /* Pseudo-NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x40000001, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x40000001, 0x00000000) };
     size_t length;
     char *result =
       my_asnprintf (NULL, &length, "%Le %d", x.value, 33, 44, 55);
@@ -2403,7 +2625,7 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
   }
   { /* Pseudo-Infinity.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x00000000, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x00000000, 0x00000000) };
     size_t length;
     char *result =
       my_asnprintf (NULL, &length, "%Le %d", x.value, 33, 44, 55);
@@ -2414,7 +2636,7 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
   }
   { /* Pseudo-Zero.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x4004, 0x00000000, 0x00000000) };
+      { .word = LDBL80_WORDS (0x4004, 0x00000000, 0x00000000) };
     size_t length;
     char *result =
       my_asnprintf (NULL, &length, "%Le %d", x.value, 33, 44, 55);
@@ -2425,7 +2647,7 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
   }
   { /* Unnormalized number.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x4000, 0x63333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0x4000, 0x63333333, 0x00000000) };
     size_t length;
     char *result =
       my_asnprintf (NULL, &length, "%Le %d", x.value, 33, 44, 55);
@@ -2436,7 +2658,7 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
   }
   { /* Pseudo-Denormal.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x0000, 0x83333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0x0000, 0x83333333, 0x00000000) };
     size_t length;
     char *result =
       my_asnprintf (NULL, &length, "%Le %d", x.value, 33, 44, 55);
@@ -2454,6 +2676,28 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
     ASSERT (result != NULL);
     ASSERT (strcmp (result, "   1.750000e+00 33") == 0
             || strcmp (result, "  1.750000e+000 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Width given as argument.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%*Le %d", 15, 1.75L, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "   1.750000e+00 33") == 0
+            || strcmp (result, "  1.750000e+000 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Negative width given as argument (cf. FLAG_LEFT below).  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%*Le %d", -15, 1.75L, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "1.750000e+00    33") == 0
+            || strcmp (result, "1.750000e+000   33") == 0);
     ASSERT (length == strlen (result));
     free (result);
   }
@@ -2778,6 +3022,19 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
     ASSERT (length == strlen (result));
     free (result);
   }
+#if HAVE_SNAND
+  { /* Signalling NaN.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%g %d", SNaNd (), 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 0)
+            && strcmp (result + strlen (result) - 3, " 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+#endif
 
   { /* Width.  */
     size_t length;
@@ -2785,6 +3042,26 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
       my_asnprintf (NULL, &length, "%10g %d", 1.75, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (strcmp (result, "      1.75 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Width given as argument.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%*g %d", 10, 1.75, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "      1.75 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Negative width given as argument (cf. FLAG_LEFT below).  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%*g %d", -10, 1.75, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "1.75       33") == 0);
     ASSERT (length == strlen (result));
     free (result);
   }
@@ -3099,10 +3376,23 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
     ASSERT (length == strlen (result));
     free (result);
   }
+#if HAVE_SNANL
+  { /* Signalling NaN.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%Lg %d", SNaNl (), 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 0)
+            && strcmp (result + strlen (result) - 3, " 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+#endif
 #if CHECK_PRINTF_SAFE && ((defined __ia64 && LDBL_MANT_DIG == 64) || (defined __x86_64__ || defined __amd64__) || (defined __i386 || defined __i386__ || defined _I386 || defined _M_IX86 || defined _X86_)) && !HAVE_SAME_LONG_DOUBLE_AS_DOUBLE
   { /* Quiet NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0xC3333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0xC3333333, 0x00000000) };
     size_t length;
     char *result =
       my_asnprintf (NULL, &length, "%Lg %d", x.value, 33, 44, 55);
@@ -3116,7 +3406,7 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
   {
     /* Signalling NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x83333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x83333333, 0x00000000) };
     size_t length;
     char *result =
       my_asnprintf (NULL, &length, "%Lg %d", x.value, 33, 44, 55);
@@ -3130,7 +3420,7 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
   /* asnprintf should print something for noncanonical values.  */
   { /* Pseudo-NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x40000001, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x40000001, 0x00000000) };
     size_t length;
     char *result =
       my_asnprintf (NULL, &length, "%Lg %d", x.value, 33, 44, 55);
@@ -3141,7 +3431,7 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
   }
   { /* Pseudo-Infinity.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x00000000, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x00000000, 0x00000000) };
     size_t length;
     char *result =
       my_asnprintf (NULL, &length, "%Lg %d", x.value, 33, 44, 55);
@@ -3152,7 +3442,7 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
   }
   { /* Pseudo-Zero.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x4004, 0x00000000, 0x00000000) };
+      { .word = LDBL80_WORDS (0x4004, 0x00000000, 0x00000000) };
     size_t length;
     char *result =
       my_asnprintf (NULL, &length, "%Lg %d", x.value, 33, 44, 55);
@@ -3163,7 +3453,7 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
   }
   { /* Unnormalized number.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x4000, 0x63333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0x4000, 0x63333333, 0x00000000) };
     size_t length;
     char *result =
       my_asnprintf (NULL, &length, "%Lg %d", x.value, 33, 44, 55);
@@ -3174,7 +3464,7 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
   }
   { /* Pseudo-Denormal.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x0000, 0x83333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0x0000, 0x83333333, 0x00000000) };
     size_t length;
     char *result =
       my_asnprintf (NULL, &length, "%Lg %d", x.value, 33, 44, 55);
@@ -3191,6 +3481,26 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
       my_asnprintf (NULL, &length, "%10Lg %d", 1.75L, 33, 44, 55);
     ASSERT (result != NULL);
     ASSERT (strcmp (result, "      1.75 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Width given as argument.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%*Lg %d", 10, 1.75L, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "      1.75 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Negative width given as argument (cf. FLAG_LEFT below).  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%*Lg %d", -10, 1.75L, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "1.75       33") == 0);
     ASSERT (length == strlen (result));
     free (result);
   }
@@ -3320,6 +3630,7 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
     free (result);
   }
 
+#if NEED_PRINTF_WITH_N_DIRECTIVE
   /* Test the support of the %n format directive.  */
 
   {
@@ -3333,6 +3644,7 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
     ASSERT (count == 4);
     free (result);
   }
+#endif
 
   /* Test the support of the POSIX/XSI format strings with positions.  */
 
@@ -3535,6 +3847,88 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
 
   /* Test the support of the %s format directive.  */
 
+  { /* Width.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%10s %d", "xyz", 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "       xyz 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Width given as argument.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%*s %d", 10, "xyz", 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "       xyz 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Negative width given as argument (cf. FLAG_LEFT below).  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%*s %d", -10, "xyz", 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "xyz        33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* FLAG_LEFT.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%-10s %d", "xyz", 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "xyz        33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  static wchar_t L_xyz[4] = { 'x', 'y', 'z', 0 };
+
+  { /* Width.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%10ls %d", L_xyz, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "       xyz 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Width given as argument.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%*ls %d", 10, L_xyz, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "       xyz 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Negative width given as argument (cf. FLAG_LEFT below).  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%*ls %d", -10, L_xyz, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "xyz        33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* FLAG_LEFT.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%-10ls %d", L_xyz, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "xyz        33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
   /* To verify that these tests succeed, it is necessary to run them under
      a tool that checks against invalid memory accesses, such as ElectricFence
      or "valgrind --tool=memcheck".  */
@@ -3558,7 +3952,6 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
         free (block);
       }
   }
-#if HAVE_WCHAR_T
   {
     size_t i;
 
@@ -3581,9 +3974,7 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
         free (block);
       }
   }
-#endif
 
-#if HAVE_WCHAR_T
   /* Test that converting an invalid wchar_t[] to char[] fails with EILSEQ.  */
   {
     static const wchar_t input[] = { (wchar_t) 1702057263, 114, 0 };
@@ -3621,7 +4012,1213 @@ test_function (char * (*my_asnprintf) (char *, size_t *, const char *, ...))
     else
       free (result);
   }
-#endif
+
+  /* Test the support of the %c format directive.  */
+
+  { /* Width.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length,
+                    "%10c %d", (unsigned char) 'x', 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "         x 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Width given as argument.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length,
+                    "%*c %d", 10, (unsigned char) 'x', 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "         x 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Negative width given as argument (cf. FLAG_LEFT below).  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length,
+                    "%*c %d", -10, (unsigned char) 'x', 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "x          33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* FLAG_LEFT.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length,
+                    "%-10c %d", (unsigned char) 'x', 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "x          33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Precision is ignored.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length,
+                    "%.0c %d", (unsigned char) 'x', 33, 44, 55);
+    ASSERT (strcmp (result, "x 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* NUL character.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length,
+                    "a%cz %d", '\0', 33, 44, 55);
+    ASSERT (memcmp (result, "a\0z 33\0", 6 + 1) == 0);
+    ASSERT (length == 6);
+    free (result);
+  }
+
+  static wint_t L_x = (wchar_t) 'x';
+
+  { /* Width.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%10lc %d", L_x, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "         x 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Width given as argument.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%*lc %d", 10, L_x, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "         x 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Negative width given as argument (cf. FLAG_LEFT below).  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%*lc %d", -10, L_x, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "x          33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* FLAG_LEFT.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%-10lc %d", L_x, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "x          33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Precision is ignored.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%.0lc %d", L_x, 33, 44, 55);
+    ASSERT (strcmp (result, "x 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* NUL character.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "a%lcz %d", (wint_t) L'\0', 33, 44, 55);
+    /* ISO C had this wrong for decades.  ISO C 23 now corrects it, through
+       this wording:
+       "If an l length modifier is present, the wint_t argument is converted
+        as if by a call to the wcrtomb function with a pointer to storage of
+        at least MB_CUR_MAX bytes, the wint_t argument converted to wchar_t,
+        and an initial shift state."  */
+    ASSERT (memcmp (result, "a\0z 33\0", 6 + 1) == 0);
+    ASSERT (length == 6);
+    free (result);
+  }
+
+  static wint_t L_invalid = (wchar_t) 0x76543210;
+
+  { /* Invalid wide character.
+       The conversion may succeed or may fail, but it should not abort.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%lc %d", L_invalid, 33, 44, 55);
+    free (result);
+  }
+
+  { /* Invalid wide character and width.
+       The conversion may succeed or may fail, but it should not abort.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%10lc %d", L_invalid, 33, 44, 55);
+    free (result);
+  }
+
+  /* Test the support of the 'x' conversion specifier for hexadecimal output of
+     integers.  */
+
+  { /* Zero.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%x %d", 0, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "0 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* A positive number.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%x %d", 12348, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "303c 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* A large positive number.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%x %d", 0xFFFFFFFEU, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "fffffffe 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Width.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%10x %d", 12348, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "      303c 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Width given as argument.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%*x %d", 10, 12348, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "      303c 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Negative width given as argument (cf. FLAG_LEFT below).  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%*x %d", -10, 12348, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "303c       33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Precision.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%.10x %d", 12348, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "000000303c 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Zero precision and a positive number.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%.0x %d", 12348, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "303c 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Zero precision and a zero number.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%.0x %d", 0, 33, 44, 55);
+    ASSERT (result != NULL);
+    /* ISO C and POSIX specify that "The result of converting a zero value
+       with a precision of zero is no characters."  */
+    ASSERT (strcmp (result, " 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Width and precision.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%15.10x %d", 12348, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "     000000303c 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Padding and precision.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%015.10x %d", 12348, 33, 44, 55);
+    ASSERT (result != NULL);
+    /* ISO C 99 § 7.19.6.1.(6) says: "For d, i, o, u, x, and X conversions, if a
+       precision is specified, the 0 flag is ignored."  */
+    ASSERT (strcmp (result, "     000000303c 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* FLAG_LEFT.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%-10x %d", 12348, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "303c       33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* FLAG_ALT with zero.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%#x %d", 0, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "0 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* FLAG_ALT with a positive number.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%#x %d", 12348, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "0x303c 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* FLAG_ALT with a positive number and width.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%#10x %d", 12348, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "    0x303c 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* FLAG_ALT with a positive number and padding.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%0#10x %d", 12348, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "0x0000303c 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* FLAG_ALT with a positive number and precision.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%0#.10x %d", 12348, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "0x000000303c 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* FLAG_ALT with a positive number and width and precision.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%#15.10x %d", 12348, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "   0x000000303c 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* FLAG_ALT with a positive number and padding and precision.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%0#15.10x %d", 12348, 33, 44, 55);
+    ASSERT (result != NULL);
+    /* ISO C 99 § 7.19.6.1.(6) says: "For d, i, o, u, x, and X conversions, if a
+       precision is specified, the 0 flag is ignored."  */
+    ASSERT (strcmp (result, "   0x000000303c 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* FLAG_ALT with a zero precision and a zero number.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%#.0x %d", 0, 33, 44, 55);
+    ASSERT (result != NULL);
+    /* ISO C and POSIX specify that "The result of converting a zero value
+       with a precision of zero is no characters.", and the prefix is added
+       only for non-zero values.  */
+    ASSERT (strcmp (result, " 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Uppercase 'X'.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%X %d", 12348, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "303C 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Uppercase 'X' with FLAG_ALT.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%#X %d", 12348, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "0X303C 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Uppercase 'X' with FLAG_ALT and zero precision and a zero number.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%#.0X %d", 0, 33, 44, 55);
+    ASSERT (result != NULL);
+    /* ISO C and POSIX specify that "The result of converting a zero value
+       with a precision of zero is no characters.", and the prefix is added
+       only for non-zero values.  */
+    ASSERT (strcmp (result, " 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  /* Test the support of the 'b' conversion specifier for binary output of
+     integers.  */
+
+  { /* Zero.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%b %d", 0, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "0 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* A positive number.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%b %d", 12345, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* A large positive number.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%b %d", 0xFFFFFFFEU, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "11111111111111111111111111111110 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Width.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%20b %d", 12345, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "      11000000111001 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Width given as argument.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%*b %d", 20, 12345, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "      11000000111001 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Negative width given as argument (cf. FLAG_LEFT below).  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%*b %d", -20, 12345, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "11000000111001       33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Precision.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%.20b %d", 12345, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "00000011000000111001 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Zero precision and a positive number.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%.0b %d", 12345, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Zero precision and a zero number.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%.0b %d", 0, 33, 44, 55);
+    ASSERT (result != NULL);
+    /* ISO C and POSIX specify that "The result of converting a zero value
+       with a precision of zero is no characters."  */
+    ASSERT (strcmp (result, " 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Width and precision.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%25.20b %d", 12345, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "     00000011000000111001 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* Padding and precision.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%025.20b %d", 12345, 33, 44, 55);
+    ASSERT (result != NULL);
+    /* Neither ISO C nor POSIX specify that the '0' flag is ignored when
+       a width and a precision are both present.  But implementations do so.  */
+    ASSERT (strcmp (result, "     00000011000000111001 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* FLAG_LEFT.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%-20b %d", 12345, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "11000000111001       33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* FLAG_ALT with zero.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%#b %d", 0, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "0 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* FLAG_ALT with a positive number.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%#b %d", 12345, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "0b11000000111001 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* FLAG_ALT with a positive number and width.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%#20b %d", 12345, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "    0b11000000111001 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* FLAG_ALT with a positive number and padding.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%0#20b %d", 12345, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "0b000011000000111001 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* FLAG_ALT with a positive number and precision.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%0#.20b %d", 12345, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "0b00000011000000111001 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* FLAG_ALT with a positive number and width and precision.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%#25.20b %d", 12345, 33, 44, 55);
+    ASSERT (result != NULL);
+    ASSERT (strcmp (result, "   0b00000011000000111001 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* FLAG_ALT with a positive number and padding and precision.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%0#25.20b %d", 12345, 33, 44, 55);
+    ASSERT (result != NULL);
+    /* Neither ISO C nor POSIX specify that the '0' flag is ignored when
+       a width and a precision are both present.  But implementations do so.  */
+    ASSERT (strcmp (result, "   0b00000011000000111001 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  { /* FLAG_ALT with a zero precision and a zero number.  */
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%#.0b %d", 0, 33, 44, 55);
+    ASSERT (result != NULL);
+    /* ISO C and POSIX specify that "The result of converting a zero value
+       with a precision of zero is no characters.", and the prefix is added
+       only for non-zero values.  */
+    ASSERT (strcmp (result, " 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  /* Test the support of argument type/size specifiers for signed integer
+     conversions.  */
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%hhd %d", (signed char) -42, 33, 44, 55);
+    ASSERT (strcmp (result, "-42 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%hd %d", (short) -12345, 33, 44, 55);
+    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%d %d", -12345, 33, 44, 55);
+    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%ld %d", (long int) -12345, 33, 44, 55);
+    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%lld %d", (long long int) -12345, 33, 44, 55);
+    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%w8d %d", (int8_t) -42, 33, 44, 55);
+    ASSERT (strcmp (result, "-42 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%w16d %d", (int16_t) -12345, 33, 44, 55);
+    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%w32d %d", (int32_t) -12345, 33, 44, 55);
+    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%w64d %d", (int64_t) -12345, 33, 44, 55);
+    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%wf8d %d", (int_fast8_t) -42, 33, 44, 55);
+    ASSERT (strcmp (result, "-42 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%wf16d %d", (int_fast16_t) -12345, 33, 44, 55);
+    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%wf32d %d", (int_fast32_t) -12345, 33, 44, 55);
+    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%wf64d %d", (int_fast64_t) -12345, 33, 44, 55);
+    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  /* Test the support of argument type/size specifiers for unsigned integer
+     conversions: %u  */
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%hhu %d", (unsigned char) 42, 33, 44, 55);
+    ASSERT (strcmp (result, "42 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%hu %d", (unsigned short) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%u %d", (unsigned int) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%lu %d", (unsigned long int) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%llu %d", (unsigned long long int) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%w8u %d", (uint8_t) 42, 33, 44, 55);
+    ASSERT (strcmp (result, "42 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%w16u %d", (uint16_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%w32u %d", (uint32_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%w64u %d", (uint64_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%wf8u %d", (uint_fast8_t) 42, 33, 44, 55);
+    ASSERT (strcmp (result, "42 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%wf16u %d", (uint_fast16_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%wf32u %d", (uint_fast32_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%wf64u %d", (uint_fast64_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  /* Test the support of argument type/size specifiers for unsigned integer
+     conversions: %b  */
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%hhb %d", (unsigned char) 42, 33, 44, 55);
+    ASSERT (strcmp (result, "101010 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%hb %d", (unsigned short) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%b %d", (unsigned int) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%lb %d", (unsigned long int) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%llb %d", (unsigned long long int) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%w8b %d", (uint8_t) 42, 33, 44, 55);
+    ASSERT (strcmp (result, "101010 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%w16b %d", (uint16_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%w32b %d", (uint32_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%w64b %d", (uint64_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%wf8b %d", (uint_fast8_t) 42, 33, 44, 55);
+    ASSERT (strcmp (result, "101010 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%wf16b %d", (uint_fast16_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%wf32b %d", (uint_fast32_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%wf64b %d", (uint_fast64_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  /* Test the support of argument type/size specifiers for unsigned integer
+     conversions: %o  */
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%hho %d", (unsigned char) 42, 33, 44, 55);
+    ASSERT (strcmp (result, "52 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%ho %d", (unsigned short) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%o %d", (unsigned int) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%lo %d", (unsigned long int) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%llo %d", (unsigned long long int) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%w8o %d", (uint8_t) 42, 33, 44, 55);
+    ASSERT (strcmp (result, "52 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%w16o %d", (uint16_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%w32o %d", (uint32_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%w64o %d", (uint64_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%wf8o %d", (uint_fast8_t) 42, 33, 44, 55);
+    ASSERT (strcmp (result, "52 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%wf16o %d", (uint_fast16_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%wf32o %d", (uint_fast32_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%wf64o %d", (uint_fast64_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  /* Test the support of argument type/size specifiers for unsigned integer
+     conversions: %x  */
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%hhX %d", (unsigned char) 42, 33, 44, 55);
+    ASSERT (strcmp (result, "2A 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%hX %d", (unsigned short) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%X %d", (unsigned int) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%lX %d", (unsigned long int) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%llX %d", (unsigned long long int) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%w8X %d", (uint8_t) 42, 33, 44, 55);
+    ASSERT (strcmp (result, "2A 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%w16X %d", (uint16_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%w32X %d", (uint32_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%w64X %d", (uint64_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%wf8X %d", (uint_fast8_t) 42, 33, 44, 55);
+    ASSERT (strcmp (result, "2A 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%wf16X %d", (uint_fast16_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%wf32X %d", (uint_fast32_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
+
+  {
+    size_t length;
+    char *result =
+      my_asnprintf (NULL, &length, "%wf64X %d", (uint_fast64_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (length == strlen (result));
+    free (result);
+  }
 
 #if (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 2)) && !defined __UCLIBC__
   /* Test that the 'I' flag is supported.  */
@@ -3666,5 +5263,5 @@ main (int argc, char *argv[])
 {
   test_vasnprintf ();
   test_asnprintf ();
-  return 0;
+  return test_exit_status;
 }

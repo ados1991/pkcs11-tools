@@ -1,8 +1,10 @@
-# pwrite.m4 serial 6
-dnl Copyright (C) 2010-2021 Free Software Foundation, Inc.
+# pwrite.m4
+# serial 9
+dnl Copyright (C) 2010-2024 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 AC_DEFUN([gl_FUNC_PWRITE],
 [
@@ -12,7 +14,7 @@ AC_DEFUN([gl_FUNC_PWRITE],
   dnl Persuade glibc <unistd.h> to declare pwrite().
   AC_REQUIRE([AC_USE_SYSTEM_EXTENSIONS])
 
-  AC_CHECK_FUNCS_ONCE([pwrite])
+  gl_CHECK_FUNCS_ANDROID([pwrite], [[#include <unistd.h>]])
   if test $ac_cv_func_pwrite = yes; then
     dnl On HP-UX 11.11 with _FILE_OFFSET_BITS=64, pwrite() on a file does not
     dnl fail when an invalid (negative) offset is passed and uses an arbitrary
@@ -29,7 +31,7 @@ changequote(,)dnl
           *)     gl_cv_func_pwrite_works="guessing yes" ;;
         esac
 changequote([,])dnl
-        gl_save_CPPFLAGS="$CPPFLAGS"
+        gl_saved_CPPFLAGS="$CPPFLAGS"
         CPPFLAGS="$CPPFLAGS -D_FILE_OFFSET_BITS=64"
         rm -f conftest.out
         AC_RUN_IFELSE(
@@ -87,7 +89,7 @@ changequote([,])dnl
           [gl_cv_func_pwrite_works=no],
           [:])
         rm -f conftest.out
-        CPPFLAGS="$gl_save_CPPFLAGS"
+        CPPFLAGS="$gl_saved_CPPFLAGS"
       ])
     case "$gl_cv_func_pwrite_works" in
       *yes) ;;
@@ -95,5 +97,8 @@ changequote([,])dnl
     esac
   else
     HAVE_PWRITE=0
+    case "$gl_cv_onwards_func_pwrite" in
+      future*) REPLACE_PWRITE=1 ;;
+    esac
   fi
 ])

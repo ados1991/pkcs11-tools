@@ -5,11 +5,23 @@ Files:
 lib/acl-internal.h
 lib/file-has-acl.c
 m4/acl.m4
+m4/selinux-selinux-h.m4
 
 Depends-on:
 acl-permissions
+assert-h
+attribute
+dirent
+errno
+extern-inline
+minmax
 free-posix
+limits-h
+malloc-posix
+ssize_t
 stat
+stdbool
+stdckdint
 
 configure.ac:
 gl_FILE_HAS_ACL
@@ -21,7 +33,7 @@ Include:
 "acl.h"
 
 Link:
-$(LIB_HAS_ACL)
+$(FILE_HAS_ACL_LIB)
 
 License:
 GPL

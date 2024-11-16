@@ -1,10 +1,10 @@
 /*
- * Copyright (C) 2005, 2009-2021 Free Software Foundation, Inc.
+ * Copyright (C) 2005, 2009-2024 Free Software Foundation, Inc.
  * Written by Simon Josefsson
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -40,5 +40,5 @@ main (void)
                         "\x0d\x70\x06\xcd\x05\x5e\x94\xcf\x61\x45\x87\xe1\xd2\xae\x0c\x8e",
                         "\xec\x99\x67\x9b\xff\xc0\xf9\xb0\x6d\x18\x30\x6b\x06\xd6\x56\x23");
 
-  return 0;
+  return test_exit_status;
 }

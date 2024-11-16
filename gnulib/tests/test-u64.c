@@ -1,9 +1,9 @@
 /* Test of <u64.h>
-   Copyright (C) 2009-2021 Free Software Foundation, Inc.
+   Copyright (C) 2009-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -41,6 +41,13 @@ main (void)
   l = u64hilo (0, 42 + 43);
 
   if (u64lt (k, l) || u64lt (l, k))
+    return 1;
+
+  u64
+    m = u64hilo (0x01020304, 0x05060708),
+    n = u64hilo (0x08070605, 0x04030201),
+    o = u64bswap (m);
+  if (u64lt (n, o) || u64lt (o, n))
     return 1;
 
   return 0;

@@ -1,10 +1,13 @@
 @node putc
-@section @code{putc}
+@subsection @code{putc}
 @findex putc
 
-POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9699919799/functions/putc.html}
+POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9799919799/functions/putc.html}
 
 Gnulib module: stdio, nonblocking, sigpipe
+@mindex stdio
+@mindex nonblocking
+@mindex sigpipe
 
 Portability problems fixed by Gnulib module @code{stdio}, together with module @code{nonblocking}:
 @itemize

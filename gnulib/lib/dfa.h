@@ -1,9 +1,9 @@
 /* dfa.h - declarations for GNU deterministic regexp compiler
-   Copyright (C) 1988, 1998, 2007, 2009-2021 Free Software Foundation, Inc.
+   Copyright (C) 1988, 1998, 2007, 2009-2024 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3, or (at your option)
+   the Free Software Foundation, either version 3, or (at your option)
    any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,18 +12,21 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software
-   Foundation, Inc.,
-   51 Franklin Street - Fifth Floor, Boston, MA  02110-1301, USA */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written June, 1988 by Mike Haertel */
 
 #ifndef DFA_H_
 #define DFA_H_
 
+/* This file uses _Noreturn, _GL_ATTRIBUTE_DEALLOC, _GL_ATTRIBUTE_MALLOC,
+   _GL_ATTRIBUTE_PURE, _GL_ATTRIBUTE_RETURNS_NONNULL.  */
+#if !_GL_CONFIG_H_INCLUDED
+ #error "Please include config.h first."
+#endif
+
 #include "idx.h"
 #include <regex.h>
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
 
@@ -73,7 +76,26 @@ enum
     DFA_ANCHOR = 1 << 0,
 
     /* '\0' in data is end-of-line, instead of the traditional '\n'.  */
-    DFA_EOL_NUL = 1 << 1
+    DFA_EOL_NUL = 1 << 1,
+
+    /* Treat [:alpha:] etc. as an error at the top level, instead of
+       merely a warning.  */
+    DFA_CONFUSING_BRACKETS_ERROR = 1 << 2,
+
+    /* Warn about stray backslashes before ordinary characters other
+       than ] and } which are special because even though POSIX
+       says \] and \} have undefined interpretation, platforms
+       reliably ignore those stray backlashes and warning about them
+       would likely cause more trouble than it's worth.  */
+    DFA_STRAY_BACKSLASH_WARN = 1 << 3,
+
+    /* Warn about * appearing out of context at the start of an
+       expression or subexpression.  */
+    DFA_STAR_WARN = 1 << 4,
+
+    /* Warn about +, ?, {...} appearing out of context at the start of
+       an expression or subexpression.  */
+    DFA_PLUS_WARN = 1 << 5,
   };
 
 /* Initialize or reinitialize a DFA.  The arguments are:

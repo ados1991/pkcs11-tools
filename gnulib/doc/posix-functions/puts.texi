@@ -1,10 +1,13 @@
 @node puts
-@section @code{puts}
+@subsection @code{puts}
 @findex puts
 
-POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9699919799/functions/puts.html}
+POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9799919799/functions/puts.html}
 
 Gnulib module: stdio, nonblocking, sigpipe
+@mindex stdio
+@mindex nonblocking
+@mindex sigpipe
 
 Portability problems fixed by Gnulib module @code{stdio}, together with module @code{nonblocking}:
 @itemize

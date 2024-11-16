@@ -1,10 +1,10 @@
 /* getnline - Read a line from a stream, with bounded memory allocation.
 
-   Copyright (C) 2003-2004, 2009-2021 Free Software Foundation, Inc.
+   Copyright (C) 2003-2004, 2009-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -20,6 +20,11 @@
 
 #include <stdio.h>
 #include <sys/types.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 #define GETNLINE_NO_LIMIT ((size_t) -1)
 
@@ -43,5 +48,10 @@ extern ssize_t getnline (char **lineptr, size_t *linesize, size_t nmax,
    NUL terminator), or -1 on error or EOF.  */
 extern ssize_t getndelim (char **lineptr, size_t *linesize, size_t nmax,
                           int delimiter, FILE *stream);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GETNLINE_H */

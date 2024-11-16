@@ -1,10 +1,10 @@
 /* mountlist.c -- return a list of mounted file systems
 
-   Copyright (C) 1991-1992, 1997-2021 Free Software Foundation, Inc.
+   Copyright (C) 1991-1992, 1997-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -154,11 +154,18 @@
 
 /* The results of opendir() in this file are not used with dirfd and fchdir,
    therefore save some unnecessary work in fchdir.c.  */
-#ifdef GNULIB_defined_opendir
+#ifdef GNULIB_defined_DIR
+# undef DIR
 # undef opendir
-#endif
-#ifdef GNULIB_defined_closedir
 # undef closedir
+# undef readdir
+#else
+# ifdef GNULIB_defined_opendir
+#  undef opendir
+# endif
+# ifdef GNULIB_defined_closedir
+#  undef closedir
+# endif
 #endif
 
 #define ME_DUMMY_0(Fs_name, Fs_type)            \
@@ -185,11 +192,11 @@
    we grant an exception to any with "bind" in its list of mount options.
    I.e., those are *not* dummy entries.  */
 #ifdef MOUNTED_GETMNTENT1
-# define ME_DUMMY(Fs_name, Fs_type, Bind)	\
-  (ME_DUMMY_0 (Fs_name, Fs_type)		\
+# define ME_DUMMY(Fs_name, Fs_type, Bind) \
+  (ME_DUMMY_0 (Fs_name, Fs_type) \
    || (strcmp (Fs_type, "none") == 0 && !Bind))
 #else
-# define ME_DUMMY(Fs_name, Fs_type)		\
+# define ME_DUMMY(Fs_name, Fs_type) \
   (ME_DUMMY_0 (Fs_name, Fs_type) || strcmp (Fs_type, "none") == 0)
 #endif
 

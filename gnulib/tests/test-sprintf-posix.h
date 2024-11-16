@@ -1,9 +1,9 @@
 /* Test of POSIX compatible vsprintf() and sprintf() functions.
-   Copyright (C) 2007-2021 Free Software Foundation, Inc.
+   Copyright (C) 2007-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -19,6 +19,7 @@
 #include "minus-zero.h"
 #include "infinity.h"
 #include "nan.h"
+#include "snan.h"
 
 /* The SGI MIPS floating-point format does not distinguish 0.0 and -0.0.  */
 static int
@@ -181,6 +182,16 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
             && strcmp (result + strlen (result) - 3, " 33") == 0);
     ASSERT (retval == strlen (result));
   }
+#if HAVE_SNAND
+  { /* Signalling NaN.  */
+    int retval =
+      my_sprintf (result, "%a %d", SNaNd (), 33, 44, 55);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 0)
+            && strcmp (result + strlen (result) - 3, " 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+#endif
 
   { /* Rounding near the decimal point.  */
     int retval =
@@ -260,6 +271,26 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
             || strcmp (result, "  0x3.8p-1 33") == 0
             || strcmp (result, "    0x7p-2 33") == 0
             || strcmp (result, "    0xep-3 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Width given as argument.  */
+    int retval =
+      my_sprintf (result, "%*a %d", 10, 1.75, 33, 44, 55);
+    ASSERT (strcmp (result, "  0x1.cp+0 33") == 0
+            || strcmp (result, "  0x3.8p-1 33") == 0
+            || strcmp (result, "    0x7p-2 33") == 0
+            || strcmp (result, "    0xep-3 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Negative width given as argument (cf. FLAG_LEFT below).  */
+    int retval =
+      my_sprintf (result, "%*a %d", -10, 1.75, 33, 44, 55);
+    ASSERT (strcmp (result, "0x1.cp+0   33") == 0
+            || strcmp (result, "0x3.8p-1   33") == 0
+            || strcmp (result, "0x7p-2     33") == 0
+            || strcmp (result, "0xep-3     33") == 0);
     ASSERT (retval == strlen (result));
   }
 
@@ -401,6 +432,8 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
   { /* Positive infinity.  */
     int retval =
       my_sprintf (result, "%La %d", Infinityl (), 33, 44, 55);
+    /* Note: This assertion fails under valgrind.
+       Reported at <https://bugs.kde.org/show_bug.cgi?id=424044>.  */
     ASSERT (strcmp (result, "inf 33") == 0);
     ASSERT (retval == strlen (result));
   }
@@ -420,10 +453,20 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
             && strcmp (result + strlen (result) - 3, " 33") == 0);
     ASSERT (retval == strlen (result));
   }
+#if HAVE_SNANL
+  { /* Signalling NaN.  */
+    int retval =
+      my_sprintf (result, "%La %d", SNaNl (), 33, 44, 55);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 0)
+            && strcmp (result + strlen (result) - 3, " 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+#endif
 #if CHECK_PRINTF_SAFE && ((defined __ia64 && LDBL_MANT_DIG == 64) || (defined __x86_64__ || defined __amd64__) || (defined __i386 || defined __i386__ || defined _I386 || defined _M_IX86 || defined _X86_)) && !HAVE_SAME_LONG_DOUBLE_AS_DOUBLE
   { /* Quiet NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0xC3333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0xC3333333, 0x00000000) };
     int retval =
       my_sprintf (result, "%La %d", x.value, 33, 44, 55);
     ASSERT (strlen (result) >= 3 + 3
@@ -434,7 +477,7 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
   {
     /* Signalling NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x83333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x83333333, 0x00000000) };
     int retval =
       my_sprintf (result, "%La %d", x.value, 33, 44, 55);
     ASSERT (strlen (result) >= 3 + 3
@@ -445,7 +488,7 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
   /* sprintf should print something for noncanonical values.  */
   { /* Pseudo-NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x40000001, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x40000001, 0x00000000) };
     int retval =
       my_sprintf (result, "%La %d", x.value, 33, 44, 55);
     ASSERT (retval == strlen (result));
@@ -453,7 +496,7 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
   }
   { /* Pseudo-Infinity.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x00000000, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x00000000, 0x00000000) };
     int retval =
       my_sprintf (result, "%La %d", x.value, 33, 44, 55);
     ASSERT (retval == strlen (result));
@@ -461,7 +504,7 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
   }
   { /* Pseudo-Zero.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x4004, 0x00000000, 0x00000000) };
+      { .word = LDBL80_WORDS (0x4004, 0x00000000, 0x00000000) };
     int retval =
       my_sprintf (result, "%La %d", x.value, 33, 44, 55);
     ASSERT (retval == strlen (result));
@@ -469,7 +512,7 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
   }
   { /* Unnormalized number.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x4000, 0x63333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0x4000, 0x63333333, 0x00000000) };
     int retval =
       my_sprintf (result, "%La %d", x.value, 33, 44, 55);
     ASSERT (retval == strlen (result));
@@ -477,7 +520,7 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
   }
   { /* Pseudo-Denormal.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x0000, 0x83333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0x0000, 0x83333333, 0x00000000) };
     int retval =
       my_sprintf (result, "%La %d", x.value, 33, 44, 55);
     ASSERT (retval == strlen (result));
@@ -564,6 +607,26 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
             || strcmp (result, "  0x3.8p-1 33") == 0
             || strcmp (result, "    0x7p-2 33") == 0
             || strcmp (result, "    0xep-3 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Width given as argument.  */
+    int retval =
+      my_sprintf (result, "%*La %d", 10, 1.75L, 33, 44, 55);
+    ASSERT (strcmp (result, "  0x1.cp+0 33") == 0
+            || strcmp (result, "  0x3.8p-1 33") == 0
+            || strcmp (result, "    0x7p-2 33") == 0
+            || strcmp (result, "    0xep-3 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Negative width given as argument (cf. FLAG_LEFT below).  */
+    int retval =
+      my_sprintf (result, "%*La %d", -10, 1.75L, 33, 44, 55);
+    ASSERT (strcmp (result, "0x1.cp+0   33") == 0
+            || strcmp (result, "0x3.8p-1   33") == 0
+            || strcmp (result, "0x7p-2     33") == 0
+            || strcmp (result, "0xep-3     33") == 0);
     ASSERT (retval == strlen (result));
   }
 
@@ -817,11 +880,35 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
             && strcmp (result + strlen (result) - 3, " 33") == 0);
     ASSERT (retval == strlen (result));
   }
+#if HAVE_SNAND
+  { /* Signalling NaN.  */
+    int retval =
+      my_sprintf (result, "%f %d", SNaNd (), 33, 44, 55);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 0)
+            && strcmp (result + strlen (result) - 3, " 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+#endif
 
   { /* Width.  */
     int retval =
       my_sprintf (result, "%10f %d", 1.75, 33, 44, 55);
     ASSERT (strcmp (result, "  1.750000 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Width given as argument.  */
+    int retval =
+      my_sprintf (result, "%*f %d", 10, 1.75, 33, 44, 55);
+    ASSERT (strcmp (result, "  1.750000 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Negative width given as argument (cf. FLAG_LEFT below).  */
+    int retval =
+      my_sprintf (result, "%*f %d", -10, 1.75, 33, 44, 55);
+    ASSERT (strcmp (result, "1.750000   33") == 0);
     ASSERT (retval == strlen (result));
   }
 
@@ -1053,10 +1140,20 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
             && strcmp (result + strlen (result) - 3, " 33") == 0);
     ASSERT (retval == strlen (result));
   }
+#if HAVE_SNANL
+  { /* Signalling NaN.  */
+    int retval =
+      my_sprintf (result, "%Lf %d", SNaNl (), 33, 44, 55);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 0)
+            && strcmp (result + strlen (result) - 3, " 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+#endif
 #if CHECK_PRINTF_SAFE && ((defined __ia64 && LDBL_MANT_DIG == 64) || (defined __x86_64__ || defined __amd64__) || (defined __i386 || defined __i386__ || defined _I386 || defined _M_IX86 || defined _X86_)) && !HAVE_SAME_LONG_DOUBLE_AS_DOUBLE
   { /* Quiet NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0xC3333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0xC3333333, 0x00000000) };
     int retval =
       my_sprintf (result, "%Lf %d", x.value, 33, 44, 55);
     ASSERT (strlen (result) >= 3 + 3
@@ -1067,7 +1164,7 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
   {
     /* Signalling NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x83333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x83333333, 0x00000000) };
     int retval =
       my_sprintf (result, "%Lf %d", x.value, 33, 44, 55);
     ASSERT (strlen (result) >= 3 + 3
@@ -1078,7 +1175,7 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
   /* sprintf should print something for noncanonical values.  */
   { /* Pseudo-NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x40000001, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x40000001, 0x00000000) };
     int retval =
       my_sprintf (result, "%Lf %d", x.value, 33, 44, 55);
     ASSERT (retval == strlen (result));
@@ -1086,7 +1183,7 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
   }
   { /* Pseudo-Infinity.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x00000000, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x00000000, 0x00000000) };
     int retval =
       my_sprintf (result, "%Lf %d", x.value, 33, 44, 55);
     ASSERT (retval == strlen (result));
@@ -1094,7 +1191,7 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
   }
   { /* Pseudo-Zero.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x4004, 0x00000000, 0x00000000) };
+      { .word = LDBL80_WORDS (0x4004, 0x00000000, 0x00000000) };
     int retval =
       my_sprintf (result, "%Lf %d", x.value, 33, 44, 55);
     ASSERT (retval == strlen (result));
@@ -1102,7 +1199,7 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
   }
   { /* Unnormalized number.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x4000, 0x63333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0x4000, 0x63333333, 0x00000000) };
     int retval =
       my_sprintf (result, "%Lf %d", x.value, 33, 44, 55);
     ASSERT (retval == strlen (result));
@@ -1110,7 +1207,7 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
   }
   { /* Pseudo-Denormal.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x0000, 0x83333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0x0000, 0x83333333, 0x00000000) };
     int retval =
       my_sprintf (result, "%Lf %d", x.value, 33, 44, 55);
     ASSERT (retval == strlen (result));
@@ -1122,6 +1219,20 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
     int retval =
       my_sprintf (result, "%10Lf %d", 1.75L, 33, 44, 55);
     ASSERT (strcmp (result, "  1.750000 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Width given as argument.  */
+    int retval =
+      my_sprintf (result, "%*Lf %d", 10, 1.75L, 33, 44, 55);
+    ASSERT (strcmp (result, "  1.750000 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Negative width given as argument (cf. FLAG_LEFT below).  */
+    int retval =
+      my_sprintf (result, "%*Lf %d", -10, 1.75L, 33, 44, 55);
+    ASSERT (strcmp (result, "1.750000   33") == 0);
     ASSERT (retval == strlen (result));
   }
 
@@ -1267,6 +1378,16 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
             && strcmp (result + strlen (result) - 3, " 33") == 0);
     ASSERT (retval == strlen (result));
   }
+#if HAVE_SNAND
+  { /* Signalling NaN.  */
+    int retval =
+      my_sprintf (result, "%F %d", SNaNd (), 33, 44, 55);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 1)
+            && strcmp (result + strlen (result) - 3, " 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+#endif
 
   { /* FLAG_ZERO.  */
     int retval =
@@ -1364,6 +1485,16 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
             && strcmp (result + strlen (result) - 3, " 33") == 0);
     ASSERT (retval == strlen (result));
   }
+#if HAVE_SNANL
+  { /* Signalling NaN.  */
+    int retval =
+      my_sprintf (result, "%LF %d", SNaNl (), 33, 44, 55);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 1)
+            && strcmp (result + strlen (result) - 3, " 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+#endif
 
   { /* FLAG_ZERO.  */
     int retval =
@@ -1564,12 +1695,38 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
             && strcmp (result + strlen (result) - 3, " 33") == 0);
     ASSERT (retval == strlen (result));
   }
+#if HAVE_SNAND
+  { /* Signalling NaN.  */
+    int retval =
+      my_sprintf (result, "%e %d", SNaNd (), 33, 44, 55);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 0)
+            && strcmp (result + strlen (result) - 3, " 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+#endif
 
   { /* Width.  */
     int retval =
       my_sprintf (result, "%15e %d", 1.75, 33, 44, 55);
     ASSERT (strcmp (result, "   1.750000e+00 33") == 0
             || strcmp (result, "  1.750000e+000 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Width given as argument.  */
+    int retval =
+      my_sprintf (result, "%*e %d", 15, 1.75, 33, 44, 55);
+    ASSERT (strcmp (result, "   1.750000e+00 33") == 0
+            || strcmp (result, "  1.750000e+000 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Negative width given as argument (cf. FLAG_LEFT below).  */
+    int retval =
+      my_sprintf (result, "%*e %d", -15, 1.75, 33, 44, 55);
+    ASSERT (strcmp (result, "1.750000e+00    33") == 0
+            || strcmp (result, "1.750000e+000   33") == 0);
     ASSERT (retval == strlen (result));
   }
 
@@ -1831,10 +1988,20 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
             && strcmp (result + strlen (result) - 3, " 33") == 0);
     ASSERT (retval == strlen (result));
   }
+#if HAVE_SNANL
+  { /* Signalling NaN.  */
+    int retval =
+      my_sprintf (result, "%Le %d", SNaNl (), 33, 44, 55);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 0)
+            && strcmp (result + strlen (result) - 3, " 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+#endif
 #if CHECK_PRINTF_SAFE && ((defined __ia64 && LDBL_MANT_DIG == 64) || (defined __x86_64__ || defined __amd64__) || (defined __i386 || defined __i386__ || defined _I386 || defined _M_IX86 || defined _X86_)) && !HAVE_SAME_LONG_DOUBLE_AS_DOUBLE
   { /* Quiet NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0xC3333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0xC3333333, 0x00000000) };
     int retval =
       my_sprintf (result, "%Le %d", x.value, 33, 44, 55);
     ASSERT (strlen (result) >= 3 + 3
@@ -1845,7 +2012,7 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
   {
     /* Signalling NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x83333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x83333333, 0x00000000) };
     int retval =
       my_sprintf (result, "%Le %d", x.value, 33, 44, 55);
     ASSERT (strlen (result) >= 3 + 3
@@ -1856,7 +2023,7 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
   /* sprintf should print something for noncanonical values.  */
   { /* Pseudo-NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x40000001, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x40000001, 0x00000000) };
     int retval =
       my_sprintf (result, "%Le %d", x.value, 33, 44, 55);
     ASSERT (retval == strlen (result));
@@ -1864,7 +2031,7 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
   }
   { /* Pseudo-Infinity.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x00000000, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x00000000, 0x00000000) };
     int retval =
       my_sprintf (result, "%Le %d", x.value, 33, 44, 55);
     ASSERT (retval == strlen (result));
@@ -1872,7 +2039,7 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
   }
   { /* Pseudo-Zero.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x4004, 0x00000000, 0x00000000) };
+      { .word = LDBL80_WORDS (0x4004, 0x00000000, 0x00000000) };
     int retval =
       my_sprintf (result, "%Le %d", x.value, 33, 44, 55);
     ASSERT (retval == strlen (result));
@@ -1880,7 +2047,7 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
   }
   { /* Unnormalized number.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x4000, 0x63333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0x4000, 0x63333333, 0x00000000) };
     int retval =
       my_sprintf (result, "%Le %d", x.value, 33, 44, 55);
     ASSERT (retval == strlen (result));
@@ -1888,7 +2055,7 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
   }
   { /* Pseudo-Denormal.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x0000, 0x83333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0x0000, 0x83333333, 0x00000000) };
     int retval =
       my_sprintf (result, "%Le %d", x.value, 33, 44, 55);
     ASSERT (retval == strlen (result));
@@ -1901,6 +2068,22 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
       my_sprintf (result, "%15Le %d", 1.75L, 33, 44, 55);
     ASSERT (strcmp (result, "   1.750000e+00 33") == 0
             || strcmp (result, "  1.750000e+000 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Width given as argument.  */
+    int retval =
+      my_sprintf (result, "%*Le %d", 15, 1.75L, 33, 44, 55);
+    ASSERT (strcmp (result, "   1.750000e+00 33") == 0
+            || strcmp (result, "  1.750000e+000 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Negative width given as argument (cf. FLAG_LEFT below).  */
+    int retval =
+      my_sprintf (result, "%*Le %d", -15, 1.75L, 33, 44, 55);
+    ASSERT (strcmp (result, "1.750000e+00    33") == 0
+            || strcmp (result, "1.750000e+000   33") == 0);
     ASSERT (retval == strlen (result));
   }
 
@@ -2161,11 +2344,35 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
             && strcmp (result + strlen (result) - 3, " 33") == 0);
     ASSERT (retval == strlen (result));
   }
+#if HAVE_SNAND
+  { /* Signalling NaN.  */
+    int retval =
+      my_sprintf (result, "%g %d", SNaNd (), 33, 44, 55);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 0)
+            && strcmp (result + strlen (result) - 3, " 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+#endif
 
   { /* Width.  */
     int retval =
       my_sprintf (result, "%10g %d", 1.75, 33, 44, 55);
     ASSERT (strcmp (result, "      1.75 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Width given as argument.  */
+    int retval =
+      my_sprintf (result, "%*g %d", 10, 1.75, 33, 44, 55);
+    ASSERT (strcmp (result, "      1.75 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Negative width given as argument (cf. FLAG_LEFT below).  */
+    int retval =
+      my_sprintf (result, "%*g %d", -10, 1.75, 33, 44, 55);
+    ASSERT (strcmp (result, "1.75       33") == 0);
     ASSERT (retval == strlen (result));
   }
 
@@ -2416,10 +2623,20 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
             && strcmp (result + strlen (result) - 3, " 33") == 0);
     ASSERT (retval == strlen (result));
   }
+#if HAVE_SNANL
+  { /* Signalling NaN.  */
+    int retval =
+      my_sprintf (result, "%Lg %d", SNaNl (), 33, 44, 55);
+    ASSERT (strlen (result) >= 3 + 3
+            && strisnan (result, 0, strlen (result) - 3, 0)
+            && strcmp (result + strlen (result) - 3, " 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+#endif
 #if CHECK_PRINTF_SAFE && ((defined __ia64 && LDBL_MANT_DIG == 64) || (defined __x86_64__ || defined __amd64__) || (defined __i386 || defined __i386__ || defined _I386 || defined _M_IX86 || defined _X86_)) && !HAVE_SAME_LONG_DOUBLE_AS_DOUBLE
   { /* Quiet NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0xC3333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0xC3333333, 0x00000000) };
     int retval =
       my_sprintf (result, "%La %d", x.value, 33, 44, 55);
     ASSERT (strlen (result) >= 3 + 3
@@ -2430,7 +2647,7 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
   {
     /* Signalling NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x83333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x83333333, 0x00000000) };
     int retval =
       my_sprintf (result, "%La %d", x.value, 33, 44, 55);
     ASSERT (strlen (result) >= 3 + 3
@@ -2441,7 +2658,7 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
   /* sprintf should print something for noncanonical values.  */
   { /* Pseudo-NaN.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x40000001, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x40000001, 0x00000000) };
     int retval =
       my_sprintf (result, "%Lg %d", x.value, 33, 44, 55);
     ASSERT (retval == strlen (result));
@@ -2449,7 +2666,7 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
   }
   { /* Pseudo-Infinity.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0xFFFF, 0x00000000, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x00000000, 0x00000000) };
     int retval =
       my_sprintf (result, "%Lg %d", x.value, 33, 44, 55);
     ASSERT (retval == strlen (result));
@@ -2457,7 +2674,7 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
   }
   { /* Pseudo-Zero.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x4004, 0x00000000, 0x00000000) };
+      { .word = LDBL80_WORDS (0x4004, 0x00000000, 0x00000000) };
     int retval =
       my_sprintf (result, "%Lg %d", x.value, 33, 44, 55);
     ASSERT (retval == strlen (result));
@@ -2465,7 +2682,7 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
   }
   { /* Unnormalized number.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x4000, 0x63333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0x4000, 0x63333333, 0x00000000) };
     int retval =
       my_sprintf (result, "%Lg %d", x.value, 33, 44, 55);
     ASSERT (retval == strlen (result));
@@ -2473,7 +2690,7 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
   }
   { /* Pseudo-Denormal.  */
     static union { unsigned int word[4]; long double value; } x =
-      { LDBL80_WORDS (0x0000, 0x83333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0x0000, 0x83333333, 0x00000000) };
     int retval =
       my_sprintf (result, "%Lg %d", x.value, 33, 44, 55);
     ASSERT (retval == strlen (result));
@@ -2485,6 +2702,20 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
     int retval =
       my_sprintf (result, "%10Lg %d", 1.75L, 33, 44, 55);
     ASSERT (strcmp (result, "      1.75 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Width given as argument.  */
+    int retval =
+      my_sprintf (result, "%*Lg %d", 10, 1.75L, 33, 44, 55);
+    ASSERT (strcmp (result, "      1.75 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Negative width given as argument (cf. FLAG_LEFT below).  */
+    int retval =
+      my_sprintf (result, "%*Lg %d", -10, 1.75L, 33, 44, 55);
+    ASSERT (strcmp (result, "1.75       33") == 0);
     ASSERT (retval == strlen (result));
   }
 
@@ -2577,6 +2808,7 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
     ASSERT (retval == strlen (result));
   }
 
+#if NEED_PRINTF_WITH_N_DIRECTIVE
   /* Test the support of the %n format directive.  */
 
   {
@@ -2587,6 +2819,7 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
     ASSERT (retval == strlen (result));
     ASSERT (count == 4);
   }
+#endif
 
   /* Test the support of the POSIX/XSI format strings with positions.  */
 
@@ -2744,6 +2977,64 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
 
   /* Test the support of the %s format directive.  */
 
+  { /* Width.  */
+    int retval =
+      my_sprintf (result, "%10s %d", "xyz", 33, 44, 55);
+    ASSERT (strcmp (result, "       xyz 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Width given as argument.  */
+    int retval =
+      my_sprintf (result, "%*s %d", 10, "xyz", 33, 44, 55);
+    ASSERT (strcmp (result, "       xyz 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Negative width given as argument (cf. FLAG_LEFT below).  */
+    int retval =
+      my_sprintf (result, "%*s %d", -10, "xyz", 33, 44, 55);
+    ASSERT (strcmp (result, "xyz        33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* FLAG_LEFT.  */
+    int retval =
+      my_sprintf (result, "%-10s %d", "xyz", 33, 44, 55);
+    ASSERT (strcmp (result, "xyz        33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  static wchar_t L_xyz[4] = { 'x', 'y', 'z', 0 };
+
+  { /* Width.  */
+    int retval =
+      my_sprintf (result, "%10ls %d", L_xyz, 33, 44, 55);
+    ASSERT (strcmp (result, "       xyz 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Width given as argument.  */
+    int retval =
+      my_sprintf (result, "%*ls %d", 10, L_xyz, 33, 44, 55);
+    ASSERT (strcmp (result, "       xyz 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Negative width given as argument (cf. FLAG_LEFT below).  */
+    int retval =
+      my_sprintf (result, "%*ls %d", -10, L_xyz, 33, 44, 55);
+    ASSERT (strcmp (result, "xyz        33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* FLAG_LEFT.  */
+    int retval =
+      my_sprintf (result, "%-10ls %d", L_xyz, 33, 44, 55);
+    ASSERT (strcmp (result, "xyz        33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
   /* To verify that these tests succeed, it is necessary to run them under
      a tool that checks against invalid memory accesses, such as ElectricFence
      or "valgrind --tool=memcheck".  */
@@ -2764,7 +3055,6 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
         free (block);
       }
   }
-#if HAVE_WCHAR_T
   {
     size_t i;
 
@@ -2784,5 +3074,915 @@ test_function (int (*my_sprintf) (char *, const char *, ...))
         free (block);
       }
   }
-#endif
+
+  /* Test the support of the %c format directive.  */
+
+  { /* Width.  */
+    int retval =
+      my_sprintf (result, "%10c %d", (unsigned char) 'x', 33, 44, 55);
+    ASSERT (strcmp (result, "         x 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Width given as argument.  */
+    int retval =
+      my_sprintf (result, "%*c %d", 10, (unsigned char) 'x', 33, 44, 55);
+    ASSERT (strcmp (result, "         x 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Negative width given as argument (cf. FLAG_LEFT below).  */
+    int retval =
+      my_sprintf (result, "%*c %d", -10, (unsigned char) 'x', 33, 44, 55);
+    ASSERT (strcmp (result, "x          33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* FLAG_LEFT.  */
+    int retval =
+      my_sprintf (result, "%-10c %d", (unsigned char) 'x', 33, 44, 55);
+    ASSERT (strcmp (result, "x          33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Precision is ignored.  */
+    int retval =
+      my_sprintf (result, "%.0c %d", (unsigned char) 'x', 33, 44, 55);
+    ASSERT (strcmp (result, "x 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* NUL character.  */
+    int retval =
+      my_sprintf (result, "a%cz %d", '\0', 33, 44, 55);
+    ASSERT (memcmp (result, "a\0z 33\0", 6 + 1) == 0);
+    ASSERT (retval == 6);
+  }
+
+  static wint_t L_x = (wchar_t) 'x';
+
+  { /* Width.  */
+    int retval =
+      my_sprintf (result, "%10lc %d", L_x, 33, 44, 55);
+    ASSERT (strcmp (result, "         x 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Width given as argument.  */
+    int retval =
+      my_sprintf (result, "%*lc %d", 10, L_x, 33, 44, 55);
+    ASSERT (strcmp (result, "         x 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Negative width given as argument (cf. FLAG_LEFT below).  */
+    int retval =
+      my_sprintf (result, "%*lc %d", -10, L_x, 33, 44, 55);
+    ASSERT (strcmp (result, "x          33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* FLAG_LEFT.  */
+    int retval =
+      my_sprintf (result, "%-10lc %d", L_x, 33, 44, 55);
+    ASSERT (strcmp (result, "x          33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Precision is ignored.  */
+    int retval =
+      my_sprintf (result, "%.0lc %d", L_x, 33, 44, 55);
+    ASSERT (strcmp (result, "x 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* NUL character.  */
+    int retval =
+      my_sprintf (result, "a%lcz %d", (wint_t) L'\0', 33, 44, 55);
+    /* ISO C had this wrong for decades.  ISO C 23 now corrects it, through
+       this wording:
+       "If an l length modifier is present, the wint_t argument is converted
+        as if by a call to the wcrtomb function with a pointer to storage of
+        at least MB_CUR_MAX bytes, the wint_t argument converted to wchar_t,
+        and an initial shift state."  */
+    /* This test is known to fail
+         - on musl libc,
+         - with gcc 14 <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=114876>  */
+    ASSERT (memcmp (result, "a\0z 33\0", 6 + 1) == 0);
+    ASSERT (retval == 6);
+  }
+
+  static wint_t L_invalid = (wchar_t) 0x76543210;
+
+  { /* Invalid wide character.
+       The conversion may succeed or may fail, but it should not abort.  */
+    int retval =
+      my_sprintf (result, "%lc %d", L_invalid, 33, 44, 55);
+    (void) retval;
+  }
+
+  { /* Invalid wide character and width.
+       The conversion may succeed or may fail, but it should not abort.  */
+    int retval =
+      my_sprintf (result, "%10lc %d", L_invalid, 33, 44, 55);
+    (void) retval;
+  }
+
+  /* Test the support of the 'x' conversion specifier for hexadecimal output of
+     integers.  */
+
+  { /* Zero.  */
+    int retval =
+      my_sprintf (result, "%x %d", 0, 33, 44, 55);
+    ASSERT (strcmp (result, "0 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* A positive number.  */
+    int retval =
+      my_sprintf (result, "%x %d", 12348, 33, 44, 55);
+    ASSERT (strcmp (result, "303c 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* A large positive number.  */
+    int retval =
+      my_sprintf (result, "%x %d", 0xFFFFFFFEU, 33, 44, 55);
+    ASSERT (strcmp (result, "fffffffe 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Width.  */
+    int retval =
+      my_sprintf (result, "%10x %d", 12348, 33, 44, 55);
+    ASSERT (strcmp (result, "      303c 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Width given as argument.  */
+    int retval =
+      my_sprintf (result, "%*x %d", 10, 12348, 33, 44, 55);
+    ASSERT (strcmp (result, "      303c 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Negative width given as argument (cf. FLAG_LEFT below).  */
+    int retval =
+      my_sprintf (result, "%*x %d", -10, 12348, 33, 44, 55);
+    ASSERT (strcmp (result, "303c       33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Precision.  */
+    int retval =
+      my_sprintf (result, "%.10x %d", 12348, 33, 44, 55);
+    ASSERT (strcmp (result, "000000303c 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Zero precision and a positive number.  */
+    int retval =
+      my_sprintf (result, "%.0x %d", 12348, 33, 44, 55);
+    ASSERT (strcmp (result, "303c 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Zero precision and a zero number.  */
+    int retval =
+      my_sprintf (result, "%.0x %d", 0, 33, 44, 55);
+    /* ISO C and POSIX specify that "The result of converting a zero value
+       with a precision of zero is no characters."  */
+    ASSERT (strcmp (result, " 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Width and precision.  */
+    int retval =
+      my_sprintf (result, "%15.10x %d", 12348, 33, 44, 55);
+    ASSERT (strcmp (result, "     000000303c 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Padding and precision.  */
+    int retval =
+      my_sprintf (result, "%015.10x %d", 12348, 33, 44, 55);
+    /* ISO C 99 § 7.19.6.1.(6) says: "For d, i, o, u, x, and X conversions, if a
+       precision is specified, the 0 flag is ignored."  */
+    ASSERT (strcmp (result, "     000000303c 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* FLAG_LEFT.  */
+    int retval =
+      my_sprintf (result, "%-10x %d", 12348, 33, 44, 55);
+    ASSERT (strcmp (result, "303c       33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* FLAG_ALT with zero.  */
+    int retval =
+      my_sprintf (result, "%#x %d", 0, 33, 44, 55);
+    ASSERT (strcmp (result, "0 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* FLAG_ALT with a positive number.  */
+    int retval =
+      my_sprintf (result, "%#x %d", 12348, 33, 44, 55);
+    ASSERT (strcmp (result, "0x303c 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* FLAG_ALT with a positive number and width.  */
+    int retval =
+      my_sprintf (result, "%#10x %d", 12348, 33, 44, 55);
+    ASSERT (strcmp (result, "    0x303c 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* FLAG_ALT with a positive number and padding.  */
+    int retval =
+      my_sprintf (result, "%0#10x %d", 12348, 33, 44, 55);
+    ASSERT (strcmp (result, "0x0000303c 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* FLAG_ALT with a positive number and precision.  */
+    int retval =
+      my_sprintf (result, "%0#.10x %d", 12348, 33, 44, 55);
+    ASSERT (strcmp (result, "0x000000303c 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* FLAG_ALT with a positive number and width and precision.  */
+    int retval =
+      my_sprintf (result, "%#15.10x %d", 12348, 33, 44, 55);
+    ASSERT (strcmp (result, "   0x000000303c 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* FLAG_ALT with a positive number and padding and precision.  */
+    int retval =
+      my_sprintf (result, "%0#15.10x %d", 12348, 33, 44, 55);
+    /* ISO C 99 § 7.19.6.1.(6) says: "For d, i, o, u, x, and X conversions, if a
+       precision is specified, the 0 flag is ignored."  */
+    ASSERT (strcmp (result, "   0x000000303c 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* FLAG_ALT with a zero precision and a zero number.  */
+    int retval =
+      my_sprintf (result, "%#.0x %d", 0, 33, 44, 55);
+    /* ISO C and POSIX specify that "The result of converting a zero value
+       with a precision of zero is no characters.", and the prefix is added
+       only for non-zero values.  */
+    ASSERT (strcmp (result, " 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Uppercase 'X'.  */
+    int retval =
+      my_sprintf (result, "%X %d", 12348, 33, 44, 55);
+    ASSERT (strcmp (result, "303C 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Uppercase 'X' with FLAG_ALT.  */
+    int retval =
+      my_sprintf (result, "%#X %d", 12348, 33, 44, 55);
+    ASSERT (strcmp (result, "0X303C 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Uppercase 'X' with FLAG_ALT and zero precision and a zero number.  */
+    int retval =
+      my_sprintf (result, "%#.0X %d", 0, 33, 44, 55);
+    /* ISO C and POSIX specify that "The result of converting a zero value
+       with a precision of zero is no characters.", and the prefix is added
+       only for non-zero values.  */
+    ASSERT (strcmp (result, " 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  /* Test the support of the 'b' conversion specifier for binary output of
+     integers.  */
+
+  { /* Zero.  */
+    int retval =
+      my_sprintf (result, "%b %d", 0, 33, 44, 55);
+    ASSERT (strcmp (result, "0 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* A positive number.  */
+    int retval =
+      my_sprintf (result, "%b %d", 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* A large positive number.  */
+    int retval =
+      my_sprintf (result, "%b %d", 0xFFFFFFFEU, 33, 44, 55);
+    ASSERT (strcmp (result, "11111111111111111111111111111110 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Width.  */
+    int retval =
+      my_sprintf (result, "%20b %d", 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "      11000000111001 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Width given as argument.  */
+    int retval =
+      my_sprintf (result, "%*b %d", 20, 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "      11000000111001 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Negative width given as argument (cf. FLAG_LEFT below).  */
+    int retval =
+      my_sprintf (result, "%*b %d", -20, 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "11000000111001       33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Precision.  */
+    int retval =
+      my_sprintf (result, "%.20b %d", 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "00000011000000111001 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Zero precision and a positive number.  */
+    int retval =
+      my_sprintf (result, "%.0b %d", 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Zero precision and a zero number.  */
+    int retval =
+      my_sprintf (result, "%.0b %d", 0, 33, 44, 55);
+    /* ISO C and POSIX specify that "The result of converting a zero value
+       with a precision of zero is no characters."  */
+    ASSERT (strcmp (result, " 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Width and precision.  */
+    int retval =
+      my_sprintf (result, "%25.20b %d", 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "     00000011000000111001 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* Padding and precision.  */
+    int retval =
+      my_sprintf (result, "%025.20b %d", 12345, 33, 44, 55);
+    /* Neither ISO C nor POSIX specify that the '0' flag is ignored when
+       a width and a precision are both present.  But implementations do so.  */
+    ASSERT (strcmp (result, "     00000011000000111001 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* FLAG_LEFT.  */
+    int retval =
+      my_sprintf (result, "%-20b %d", 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "11000000111001       33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* FLAG_ALT with zero.  */
+    int retval =
+      my_sprintf (result, "%#b %d", 0, 33, 44, 55);
+    ASSERT (strcmp (result, "0 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* FLAG_ALT with a positive number.  */
+    int retval =
+      my_sprintf (result, "%#b %d", 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "0b11000000111001 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* FLAG_ALT with a positive number and width.  */
+    int retval =
+      my_sprintf (result, "%#20b %d", 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "    0b11000000111001 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* FLAG_ALT with a positive number and padding.  */
+    int retval =
+      my_sprintf (result, "%0#20b %d", 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "0b000011000000111001 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* FLAG_ALT with a positive number and precision.  */
+    int retval =
+      my_sprintf (result, "%0#.20b %d", 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "0b00000011000000111001 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* FLAG_ALT with a positive number and width and precision.  */
+    int retval =
+      my_sprintf (result, "%#25.20b %d", 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "   0b00000011000000111001 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* FLAG_ALT with a positive number and padding and precision.  */
+    int retval =
+      my_sprintf (result, "%0#25.20b %d", 12345, 33, 44, 55);
+    /* Neither ISO C nor POSIX specify that the '0' flag is ignored when
+       a width and a precision are both present.  But implementations do so.  */
+    ASSERT (strcmp (result, "   0b00000011000000111001 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  { /* FLAG_ALT with a zero precision and a zero number.  */
+    int retval =
+      my_sprintf (result, "%#.0b %d", 0, 33, 44, 55);
+    /* ISO C and POSIX specify that "The result of converting a zero value
+       with a precision of zero is no characters.", and the prefix is added
+       only for non-zero values.  */
+    ASSERT (strcmp (result, " 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  /* Test the support of argument type/size specifiers for signed integer
+     conversions.  */
+
+  {
+    int retval =
+      my_sprintf (result, "%hhd %d", (signed char) -42, 33, 44, 55);
+    ASSERT (strcmp (result, "-42 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%hd %d", (short) -12345, 33, 44, 55);
+    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%d %d", -12345, 33, 44, 55);
+    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%ld %d", (long int) -12345, 33, 44, 55);
+    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%lld %d", (long long int) -12345, 33, 44, 55);
+    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%w8d %d", (int8_t) -42, 33, 44, 55);
+    ASSERT (strcmp (result, "-42 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%w16d %d", (int16_t) -12345, 33, 44, 55);
+    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%w32d %d", (int32_t) -12345, 33, 44, 55);
+    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%w64d %d", (int64_t) -12345, 33, 44, 55);
+    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%wf8d %d", (int_fast8_t) -42, 33, 44, 55);
+    ASSERT (strcmp (result, "-42 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%wf16d %d", (int_fast16_t) -12345, 33, 44, 55);
+    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%wf32d %d", (int_fast32_t) -12345, 33, 44, 55);
+    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%wf64d %d", (int_fast64_t) -12345, 33, 44, 55);
+    ASSERT (strcmp (result, "-12345 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  /* Test the support of argument type/size specifiers for unsigned integer
+     conversions: %u  */
+
+  {
+    int retval =
+      my_sprintf (result, "%hhu %d", (unsigned char) 42, 33, 44, 55);
+    ASSERT (strcmp (result, "42 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%hu %d", (unsigned short) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%u %d", (unsigned int) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%lu %d", (unsigned long int) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%llu %d", (unsigned long long int) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%w8u %d", (uint8_t) 42, 33, 44, 55);
+    ASSERT (strcmp (result, "42 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%w16u %d", (uint16_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%w32u %d", (uint32_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%w64u %d", (uint64_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%wf8u %d", (uint_fast8_t) 42, 33, 44, 55);
+    ASSERT (strcmp (result, "42 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%wf16u %d", (uint_fast16_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%wf32u %d", (uint_fast32_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%wf64u %d", (uint_fast64_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "12345 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  /* Test the support of argument type/size specifiers for unsigned integer
+     conversions: %b  */
+
+  {
+    int retval =
+      my_sprintf (result, "%hhb %d", (unsigned char) 42, 33, 44, 55);
+    ASSERT (strcmp (result, "101010 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%hb %d", (unsigned short) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%b %d", (unsigned int) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%lb %d", (unsigned long int) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%llb %d", (unsigned long long int) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%w8b %d", (uint8_t) 42, 33, 44, 55);
+    ASSERT (strcmp (result, "101010 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%w16b %d", (uint16_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%w32b %d", (uint32_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%w64b %d", (uint64_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%wf8b %d", (uint_fast8_t) 42, 33, 44, 55);
+    ASSERT (strcmp (result, "101010 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%wf16b %d", (uint_fast16_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%wf32b %d", (uint_fast32_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%wf64b %d", (uint_fast64_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "11000000111001 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  /* Test the support of argument type/size specifiers for unsigned integer
+     conversions: %o  */
+
+  {
+    int retval =
+      my_sprintf (result, "%hho %d", (unsigned char) 42, 33, 44, 55);
+    ASSERT (strcmp (result, "52 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%ho %d", (unsigned short) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%o %d", (unsigned int) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%lo %d", (unsigned long int) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%llo %d", (unsigned long long int) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%w8o %d", (uint8_t) 42, 33, 44, 55);
+    ASSERT (strcmp (result, "52 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%w16o %d", (uint16_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%w32o %d", (uint32_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%w64o %d", (uint64_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%wf8o %d", (uint_fast8_t) 42, 33, 44, 55);
+    ASSERT (strcmp (result, "52 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%wf16o %d", (uint_fast16_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%wf32o %d", (uint_fast32_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%wf64o %d", (uint_fast64_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "30071 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  /* Test the support of argument type/size specifiers for unsigned integer
+     conversions: %x  */
+
+  {
+    int retval =
+      my_sprintf (result, "%hhX %d", (unsigned char) 42, 33, 44, 55);
+    ASSERT (strcmp (result, "2A 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%hX %d", (unsigned short) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%X %d", (unsigned int) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%lX %d", (unsigned long int) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%llX %d", (unsigned long long int) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%w8X %d", (uint8_t) 42, 33, 44, 55);
+    ASSERT (strcmp (result, "2A 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%w16X %d", (uint16_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%w32X %d", (uint32_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%w64X %d", (uint64_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%wf8X %d", (uint_fast8_t) 42, 33, 44, 55);
+    ASSERT (strcmp (result, "2A 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%wf16X %d", (uint_fast16_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%wf32X %d", (uint_fast32_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
+
+  {
+    int retval =
+      my_sprintf (result, "%wf64X %d", (uint_fast64_t) 12345, 33, 44, 55);
+    ASSERT (strcmp (result, "3039 33") == 0);
+    ASSERT (retval == strlen (result));
+  }
 }

@@ -3,6 +3,14 @@ Important general notes
 
 Date        Modules         Changes
 
+2022-07-24  bootstrap       To specify a reference directory for the 'gnulib'
+                            submodule, use the environment variable
+                            GNULIB_REFDIR instead of GNULIB_SRCDIR or the
+                            command-line option --gnulib-refdir instead of
+                            --gnulib-srcdir.
+
+2022-02-20  (all)           Automake >= 1.14 and Autoconf >= 2.64 are required.
+
 2021-06-04  (all)           The license notices in source files are now really
                             stating the effective license, rather than a fake
                             GPL notice.
@@ -65,6 +73,181 @@ User visible incompatible changes
 ---------------------------------
 
 Date        Modules         Changes
+
+2024-11-05  eealloc         This module is deprecated.  Use malloc-gnu or
+                            realloc-posix instead.
+
+2024-10-22  spawn-pipe      The functions 'create_pipe_out', 'create_pipe_in',
+                            'create_pipe_bidi' now take a 4th argument
+                            'const char * const *dll_dirs'. To maintain the
+                            previous behaviour, insert NULL as additional 4th
+                            argument.
+
+2024-10-22  execute         The function 'execute' now takes a 4th argument
+                            'const char * const *dll_dirs'. To maintain the
+                            previous behaviour, insert NULL as additional 4th
+                            argument.
+
+2024-10-02  file-has-acl    The file_has_aclinfo function introduced 3 days ago
+                            now has a different signature.
+
+2024-09-25  string-buffer   The function sb_append is renamed to sb_append_c.
+                            The function sb_dupfree is renamed to sb_dupfree_c.
+
+2024-08-14  verror          The include file is changed from "verror.h"
+                            to <error.h>.
+
+2024-08-09  full-read       These modules now prefer signed types to size_t.
+            full-write      The preferred types are idx_t for object sizes and
+            safe-read       ptrdiff_t for values that are either a size or -1.
+            safe-write      SAFE_READ_ERROR and SAFE_WRITE_ERROR are now
+                            obsolescent; callers can just check for < 0.
+
+2024-06-22  xvasprintf      It is now the programmer's responsibility to pass
+            c-xvasprintf    a valid format string without %ls, %lc directives
+                            and that all widths are >= -INT_MAX and <= INT_MAX.
+
+2024-05-16  putenv          This module is renamed to 'putenv-gnu'.
+
+2024-02-21  *printf-posix   These modules no longer support the 'n' directive
+                            by default.  In order to keep the 'n' directive
+                            enabled, you need to additionally request the
+                            module 'printf-with-n-directive'.
+
+2024-02-09  strftime        This module, deprecated on 2017-07-23, is removed.
+                            Use module 'nstrftime' instead.
+
+2023-09-03  same-inode      SAME_INODE, ST_BLKSIZE and ST_NBLOCKS args
+            stat-size       must be addressable lvalues.
+
+2023-08-08  readutmp        The result element type of the function read_utmp,
+                            STRUCT_UTMP, is no longer the same as the result
+                            value type of the function getutxent, struct utmpx.
+
+2023-08-03  readutmp        Some STRUCT_UTMP members can be char *,
+2023-08-01                  rather than fixed-length char arrays.
+                            On some platforms, the timestamp is ut_ts of type
+                            struct timespec, not ut_tv of type struct timeval,
+                            and ut_session is pid_t not long.
+                            read_utmp's 2nd arg is now idx_t * not size_t *.
+                            Link additionally with $(READUTMP_LIB).
+
+2023-07-10  dfa             The signature of the function
+                            case_folded_counterparts, declared in localeinfo.h,
+                            has changed.
+
+2023-06-10  javacomp-script  These modules now compile the Java code with option
+            javacomp          '-source 1.6' or higher. As a consequence, the
+                             compiler may emit notes "... uses unchecked or
+                             unsafe operations". To avoid these notes, add
+                             template arguments to the types or functions.
+
+2023-04-28  largefile-required
+            year2038-required
+                            Modules removed, for consistency with Autoconf
+                            master.  Use new module year2038-recommended
+                            instead of year2038-required.
+
+2023-03-25  mtx             This module no longer provides the function
+                            call_once.  To get this function, use the new
+                            separate module 'call_once'.
+
+2023-03-08  time            This module is renamed to 'time-h'.
+                            The new 'time' module now also works around an
+                            inconsistency in glibc 2.31+ on Linux.
+
+2023-02-07  c-nullptr       Rename this module to nullptr.
+
+2023-01-21  getprogname     The include file is changed from "getprogname.h"
+                            to <stdlib.h>.
+
+2023-01-15  stdalign        This module is deprecated.  Use alignasof instead.
+
+2023-01-13  acl             Link additionally with $(QCOPY_ACL_LIB).
+            qacl
+            copy-file
+            supersede
+
+2023-01-13  qcopy-acl       Link with $(QCOPY_ACL_LIB) instead of $(LIB_ACL).
+
+2023-01-07  timer_time      Link with $(TIMER_TIME_LIB) instead of
+                            $(LIB_TIMER_TIME).
+
+2023-01-07  setlocale-null  Link with $(SETLOCALE_NULL_LIB) instead of
+                            $(LIB_SETLOCALE_NULL).
+
+2023-01-07  setlocale       Link with $(SETLOCALE_LIB) instead of
+                            $(LIB_SETLOCALE).
+
+2023-01-07  select          Link with $(SELECT_LIB) instead of $(LIB_SELECT).
+
+2023-01-07  sched_yield     Link with $(SCHED_YIELD_LIB) instead of
+                            $(LIB_SCHED_YIELD).
+
+2023-01-07  pthread_sigmask  Link with $(PTHREAD_SIGMASK_LIB) instead of
+                             $(LIB_PTHREAD_SIGMASK).
+
+2023-01-07  posix_spawn     Link with $(POSIX_SPAWN_LIB) instead of
+                            $(LIB_POSIX_SPAWN).
+
+2023-01-07  poll            Link with $(POLL_LIB) instead of $(LIB_POLL).
+
+2023-01-07  nanosleep       Link with $(NANOSLEEP_LIB) instead of
+                            $(LIB_NANOSLEEP).
+
+2023-01-07  mbrtowc         Link with $(MBRTOWC_LIB) instead of $(LIB_MBRTOWC).
+
+2023-01-07  hard-locale     Link with $(HARD_LOCALE_LIB) instead of
+                            $(LIB_HARD_LOCALE).
+
+2023-01-07  getrandom       Link with $(GETRANDOM_LIB) instead of
+                            $(LIB_GETRANDOM).
+
+2023-01-07  getlogin        Link with $(GETLOGIN_LIB) instead of
+            getlogin_r      $(LIB_GETLOGIN).
+
+2023-01-07  gethrxtime      Link with $(GETHRXTIME_LIB) instead of
+                            $(LIB_GETHRXTIME).
+
+2023-01-07  fdatasync       Link with $(FDATASYNC_LIB) instead of
+                            $(LIB_FDATASYNC).
+
+2023-01-07  euidaccess      Link with $(EUIDACCESS_LIBGEN) instead of
+                            $(LIB_EACCESS).
+
+2023-01-07  duplocale       Link with $(DUPLOCALE_LIB) instead of
+                            $(LIB_DUPLOCALE).
+
+2023-01-07  clock_time      Link with $(CLOCK_TIME_LIB) instead of
+                            $(LIB_CLOCK_GETTIME).
+
+2023-01-06  file-has-acl    Link with $(FILE_HAS_ACL_LIB), not $(LIB_HAS_ACL).
+
+2022-12-25  largefile       configure no longer enables year-2038 support,
+                            unless you configure with --enable-year2038
+                            or use the year2038 module.  This temporary
+                            hack should go away before the year 2038.
+
+2022-12-24  stdnoreturn     This module is deprecated.  Use _Noreturn
+                            or the noreturn module instead.
+
+2022-12-21  ctime           This module is deprecated.  Use localtime_r
+                            and strftime (or even sprintf) instead.
+
+2022-11-03  dynarray        These modules are renamed to glibc-internal/dynarray
+            scratch_buffer  and glibc-internal/scratch_buffer, respectively.
+                            They are not meant for general use.
+
+2022-11-02  scratch_buffer  The function 'gl_scratch_buffer_dupfree' is removed.
+
+2022-09-10  stdbool         This module now assumes C99 and provides C23,
+                            instead of providing C99.  For the old behavior,
+                            use the already-deprecated stdbool-c99 module.
+
+2022-03-09  statat          This module is deprecated.  Use fstatat instead.
+
+2022-01-05  stack           This module now uses idx_t instead of size_t
+                            for indexes and counts.
 
 2021-08-27  base32          These modules now use idx_t instead of size_t
             base64          for indexes and counts.
@@ -669,15 +852,15 @@ Date        Modules         Changes
 2009-06-25  fpurge          The include file is changed from "fpurge.h" to
                             <stdio.h>.
 
-2009-04-26  modules/uniconv/u8-conv-from-enc
-            modules/uniconv/u16-conv-from-enc
-            modules/uniconv/u32-conv-from-enc
+2009-04-26  uniconv/u8-conv-from-enc
+            uniconv/u16-conv-from-enc
+            uniconv/u32-conv-from-enc
                             The calling convention of the functions
                             u*_conv_from_encoding is changed.
 
-2009-04-26  modules/uniconv/u8-conv-to-enc
-            modules/uniconv/u16-conv-to-enc
-            modules/uniconv/u32-conv-to-enc
+2009-04-26  uniconv/u8-conv-to-enc
+            uniconv/u16-conv-to-enc
+            uniconv/u32-conv-to-enc
                             The calling convention of the functions
                             u*_conv_to_encoding is changed.
 

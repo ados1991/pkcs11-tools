@@ -1,10 +1,10 @@
 /* floating point to accurate string
 
-   Copyright (C) 2010-2021 Free Software Foundation, Inc.
+   Copyright (C) 2010-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -23,6 +23,11 @@
 #include "intprops.h"
 #include <float.h>
 #include <stddef.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* Store into BUF (of size BUFSIZE) an accurate minimal-precision
    string representation of a floating point number.  FLAGS affect the
@@ -148,5 +153,10 @@ enum
 #define  FLT_BUFSIZE_BOUND ( FLT_STRLEN_BOUND + 1)
 #define  DBL_BUFSIZE_BOUND ( DBL_STRLEN_BOUND + 1)
 #define LDBL_BUFSIZE_BOUND (LDBL_STRLEN_BOUND + 1)
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _GL_FTOASTR_H */

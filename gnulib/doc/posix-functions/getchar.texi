@@ -1,10 +1,12 @@
 @node getchar
-@section @code{getchar}
+@subsection @code{getchar}
 @findex getchar
 
-POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9699919799/functions/getchar.html}
+POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9799919799/functions/getchar.html}
 
 Gnulib module: stdio, nonblocking
+@mindex stdio
+@mindex nonblocking
 
 Portability problems fixed by Gnulib module @code{stdio}, together with module @code{nonblocking}:
 @itemize

@@ -1,9 +1,9 @@
 /* Test random_r.
-   Copyright (C) 2008-2021 Free Software Foundation, Inc.
+   Copyright (C) 2008-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -28,6 +28,9 @@ SIGNATURE_CHECK (random_r, int, (struct random_data *, int32_t *));
 #include <time.h>
 
 #include "macros.h"
+
+/* Note: This test crashes on glibc/SPARC systems.
+   Reported at <https://sourceware.org/bugzilla/show_bug.cgi?id=30584>.  */
 
 static int
 test_failed (int alignment)
@@ -61,5 +64,5 @@ main ()
   for (alignment = 0; alignment < sizeof (int32_t); alignment++)
     if (test_failed (alignment))
       return 1;
-  return 0;
+  return test_exit_status;
 }

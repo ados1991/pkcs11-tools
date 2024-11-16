@@ -5,8 +5,11 @@ Files:
 lib/mbscasecmp.c
 
 Depends-on:
-mbuiter
+c32tolower
+mbuiterf            [test "$GNULIB_MCEL_PREFER" != yes]
+stdlib
 string
+uchar
 
 configure.ac:
 gl_STRING_MODULE_INDICATOR([mbscasecmp])
@@ -19,7 +22,8 @@ Include:
 
 Link:
 $(LTLIBUNISTRING) when linking with libtool, $(LIBUNISTRING) otherwise
-$(LIB_MBRTOWC)
+$(MBRTOWC_LIB)
+$(LTLIBC32CONV) when linking with libtool, $(LIBC32CONV) otherwise
 
 License:
 LGPL

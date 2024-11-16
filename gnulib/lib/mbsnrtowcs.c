@@ -1,10 +1,10 @@
 /* Convert string to wide string.
-   Copyright (C) 2008-2021 Free Software Foundation, Inc.
+   Copyright (C) 2008-2024 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2008.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
-   published by the Free Software Foundation; either version 3 of the
+   published by the Free Software Foundation, either version 3 of the
    License, or (at your option) any later version.
 
    This file is distributed in the hope that it will be useful,
@@ -34,4 +34,5 @@ extern mbstate_t _gl_mbsrtowcs_state;
 #define DCHAR_T wchar_t
 #define INTERNAL_STATE _gl_mbsrtowcs_state
 #define MBRTOWC mbrtowc
+#define USES_C32 0
 #include "mbsnrtowcs-impl.h"

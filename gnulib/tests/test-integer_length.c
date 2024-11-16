@@ -1,9 +1,9 @@
 /* Test of integer_length().
-   Copyright (C) 2011-2021 Free Software Foundation, Inc.
+   Copyright (C) 2011-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -62,5 +62,5 @@ main (int argc, char *argv[])
       ASSERT (integer_length (-5U << i) == NBITS);
       ASSERT (integer_length (-7U << i) == NBITS);
     }
-  return 0;
+  return test_exit_status;
 }

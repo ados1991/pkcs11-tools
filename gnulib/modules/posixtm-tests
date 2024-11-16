@@ -6,7 +6,8 @@ Depends-on:
 intprops
 setenv
 stdint
-strftime
+stpcpy
+strftime-fixes
 
 configure.ac:
 

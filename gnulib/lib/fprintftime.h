@@ -1,10 +1,10 @@
 /* Generate time strings directly to the output.  */
 
-/* Copyright (C) 2005, 2009-2021 Free Software Foundation, Inc.
+/* Copyright (C) 2005, 2009-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -18,6 +18,11 @@
 #include <stdio.h>
 #include <time.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 /* A cross between fprintf and nstrftime, that prints directly
    to the output stream, without the need for the potentially
    large buffer that nstrftime would require.
@@ -27,3 +32,8 @@
    and NANOSECONDS values.  */
 size_t fprintftime (FILE *fp, char const *fmt, struct tm const *tm,
                     timezone_t zone, int nanoseconds);
+
+
+#ifdef __cplusplus
+}
+#endif

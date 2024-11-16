@@ -1,10 +1,12 @@
 @node fread
-@section @code{fread}
+@subsection @code{fread}
 @findex fread
 
-POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9699919799/functions/fread.html}
+POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9799919799/functions/fread.html}
 
 Gnulib module: stdio, nonblocking
+@mindex stdio
+@mindex nonblocking
 
 Portability problems fixed by Gnulib module @code{stdio}, together with module @code{nonblocking}:
 @itemize

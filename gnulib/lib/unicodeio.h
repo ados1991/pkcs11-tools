@@ -1,10 +1,10 @@
 /* Unicode character output to streams with locale dependent encoding.
 
-   Copyright (C) 2000-2003, 2005, 2008-2021 Free Software Foundation, Inc.
+   Copyright (C) 2000-2003, 2005, 2008-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -16,10 +16,15 @@
    along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #ifndef UNICODEIO_H
-# define UNICODEIO_H
+#define UNICODEIO_H
 
-# include <stddef.h>
-# include <stdio.h>
+#include <stddef.h>
+#include <stdio.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* Converts the Unicode character CODE to its multibyte representation
    in the current locale and calls the SUCCESS callback on the resulting
@@ -44,5 +49,10 @@ extern void print_unicode_char (FILE *stream, unsigned int code,
    The STREAM is passed as callback_arg.  */
 extern long fwrite_success_callback (const char *buf, size_t buflen,
                                      void *callback_arg);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

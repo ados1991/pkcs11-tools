@@ -1,10 +1,10 @@
 /* Convert string to wide string.
-   Copyright (C) 2008-2021 Free Software Foundation, Inc.
+   Copyright (C) 2008-2024 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2008.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
-   published by the Free Software Foundation; either version 3 of the
+   published by the Free Software Foundation, either version 3 of the
    License, or (at your option) any later version.
 
    This file is distributed in the hope that it will be useful,
@@ -61,8 +61,11 @@ FUNC (DCHAR_T *dest, const char **srcp, size_t srclen, size_t len, mbstate_t *ps
                 /* Here mbsinit (ps).  */
                 break;
               }
-            src += ret;
-            srclen -= ret;
+            if (!(USES_C32 && ret == (size_t)(-3)))
+              {
+                src += ret;
+                srclen -= ret;
+              }
           }
 
         *srcp = src;

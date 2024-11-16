@@ -7,14 +7,19 @@ lib/csharpcomp.c
 
 Depends-on:
 stdbool
-xmalloca
+error
+xconcat-filename
+cygpath
 execute
 spawn-pipe
 wait-process
 getline
+scandir
+alphasort
 sh-quote
 safe-read
-error
+xmalloca
+xvasprintf
 gettext-h
 memcmp
 csharpcomp-script
@@ -28,7 +33,9 @@ Include:
 "csharpcomp.h"
 
 Link:
-$(LIB_MBRTOWC)
+$(LTLIBUNISTRING) when linking with libtool, $(LIBUNISTRING) otherwise
+$(MBRTOWC_LIB)
+$(LTLIBC32CONV) when linking with libtool, $(LIBC32CONV) otherwise
 $(LIBTHREAD)
 
 License:

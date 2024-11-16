@@ -1,5 +1,5 @@
 Description:
-c_vsnprintf(): print formatted output from an stdarg argument listto a
+c_vsnprintf(): print formatted output from an stdarg argument list to a
 fixed length string in C locale
 
 Files:
@@ -7,8 +7,9 @@ lib/c-vsnprintf.h
 lib/c-vsnprintf.c
 
 Depends-on:
+stdint
 stdio
-c-vasnprintf
+c-vsnzprintf
 
 configure.ac:
 AC_REQUIRE([AC_C_RESTRICT])
@@ -20,7 +21,7 @@ Include:
 "c-vsnprintf.h"
 
 License:
-GPL
+LGPLv2+
 
 Maintainer:
-Ben Pfaff
+all

@@ -1,9 +1,9 @@
 /* Test of POSIX compatible vasnprintf() and asnprintf() functions.
-   Copyright (C) 2010-2021 Free Software Foundation, Inc.
+   Copyright (C) 2010-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -79,7 +79,8 @@ main (int argc, char *argv[])
 {
 #if (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 3)) && !defined __UCLIBC__
   /* Select a locale with Arabic 'outdigits'.  */
-  if (setlocale (LC_ALL, "fa_IR.UTF-8") == NULL)
+  if (setlocale (LC_ALL, "fa_IR.UTF-8") == NULL
+      && setlocale (LC_ALL, "fa_IR") == NULL)
     {
       fprintf (stderr, "Skipping test: no Iranian locale is installed\n");
       return 77;
@@ -88,7 +89,7 @@ main (int argc, char *argv[])
   test_vasnprintf ();
   test_asnprintf ();
 
-  return 0;
+  return test_exit_status;
 #else
   fprintf (stderr, "Skipping test: not a glibc >= 2.3 system\n");
   return 77;

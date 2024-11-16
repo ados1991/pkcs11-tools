@@ -1,10 +1,10 @@
 /* Test for nonblocking read and write on sockets.
 
-   Copyright (C) 2011-2021 Free Software Foundation, Inc.
+   Copyright (C) 2011-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -18,7 +18,6 @@
 #include <config.h>
 
 #include <errno.h>
-#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -120,5 +119,5 @@ main (int argc, char *argv[])
     ASSERT (err == 0);
   }
 
-  return exitcode;
+  return (exitcode ? exitcode : test_exit_status);
 }

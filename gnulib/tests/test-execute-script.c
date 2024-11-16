@@ -1,9 +1,9 @@
 /* Test of execute.
-   Copyright (C) 2020-2021 Free Software Foundation, Inc.
+   Copyright (C) 2020-2024 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3, or (at your option)
+   the Free Software Foundation, either version 3, or (at your option)
    any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -18,7 +18,6 @@
 
 #include "execute.h"
 
-#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -58,7 +57,7 @@ main ()
           (i == 0 ? SRCDIR "executable-script" : SRCDIR "executable-script.sh");
         const char *prog_argv[2] = { prog_path, NULL };
 
-        int ret = execute (progname, prog_argv[0], prog_argv, NULL,
+        int ret = execute (progname, prog_argv[0], prog_argv, NULL, NULL,
                            false, false, false, false, true, false, NULL);
         ASSERT (ret == 127);
       }
@@ -69,6 +68,8 @@ main ()
      Only .bat and .cmd files are.  */
   ASSERT (fclose (fp) == 0);
   ASSERT (unlink (DATA_FILENAME) == 0);
+  if (test_exit_status)
+    return test_exit_status;
   fprintf (stderr, "Skipping test: scripts are not executable on this platform.\n");
   return 77;
 #else
@@ -77,7 +78,7 @@ main ()
     const char *prog_path = SRCDIR "executable-shell-script";
     const char *prog_argv[2] = { prog_path, NULL };
 
-    int ret = execute (progname, prog_argv[0], prog_argv, NULL,
+    int ret = execute (progname, prog_argv[0], prog_argv, NULL, NULL,
                        false, false, false, false, true, false, NULL);
     ASSERT (ret == 0);
 
@@ -90,6 +91,6 @@ main ()
 
   ASSERT (unlink (DATA_FILENAME) == 0);
 
-  return 0;
+  return test_exit_status;
 #endif
 }

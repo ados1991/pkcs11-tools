@@ -1,9 +1,9 @@
 /* Test of exp*() function family.
-   Copyright (C) 2012-2021 Free Software Foundation, Inc.
+   Copyright (C) 2012-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -63,7 +63,9 @@ test_function (void)
     /* Error bound, in ulps.  */
     const DOUBLE err_bound =
       (sizeof (DOUBLE) > sizeof (double) ?
-#if defined __i386__ && defined __FreeBSD__
+#if defined __i386__ && defined __NetBSD__
+       L_(25000.0)
+#elif defined __i386__ && defined __FreeBSD__
        L_(2400.0)
 #else
        L_(24.0)

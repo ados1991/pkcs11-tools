@@ -8,8 +8,9 @@ localcharset
 wctype-h
 
 configure.ac:
+AC_CHECK_DECLS_ONCE([alarm])
 
 Makefile.am:
 TESTS += test-regex
 check_PROGRAMS += test-regex
-test_regex_LDADD = $(LDADD) $(LIB_SETLOCALE) $(LIB_MBRTOWC) @LIBINTL@ $(LIBTHREAD)
+test_regex_LDADD = $(LDADD) $(SETLOCALE_LIB) $(MBRTOWC_LIB) @LIBINTL@ $(LIBTHREAD)

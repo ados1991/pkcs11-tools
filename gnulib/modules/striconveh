@@ -29,14 +29,13 @@ fi
 
 Makefile.am:
 lib_SOURCES += striconveh.h striconveh.c
-if GL_COND_LIBTOOL
 lib_LDFLAGS += $(LTLIBICONV)
-endif
 
 Include:
 "striconveh.h"
 
 Link:
+$(LTLIBUNISTRING) when linking with libtool, $(LIBUNISTRING) otherwise
 $(LTLIBICONV) when linking with libtool, $(LIBICONV) otherwise
 
 License:

@@ -1,5 +1,5 @@
 /* Name of system error code.
-   Copyright (C) 2020-2021 Free Software Foundation, Inc.
+   Copyright (C) 2020-2024 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -34,7 +34,7 @@ strerrorname_np (int errnum)
     case ERANGE:          return "ERANGE";
 
     /* Error codes specified by POSIX.
-       <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/errno.h.html>  */
+       <https://pubs.opengroup.org/onlinepubs/9799919799/basedefs/errno.h.html>  */
     #if defined E2BIG
     case E2BIG:           return "E2BIG";
     #endif
@@ -245,6 +245,9 @@ strerrorname_np (int errnum)
     #if defined EROFS
     case EROFS:           return "EROFS";
     #endif
+    #if defined ESOCKTNOSUPPORT
+    case ESOCKTNOSUPPORT: return "ESOCKTNOSUPPORT";
+    #endif
     #if defined ESPIPE
     case ESPIPE:          return "ESPIPE";
     #endif
@@ -304,7 +307,7 @@ strerrorname_np (int errnum)
     case EBADCPU:         return "EBADCPU";
     #endif
     /* Linux, IRIX, Solaris, Cygwin */
-    #if defined EBADE
+    #if defined EBADE && EBADE != ECKSUM
     case EBADE:           return "EBADE";
     #endif
     /* Minix */
@@ -336,7 +339,7 @@ strerrorname_np (int errnum)
     case EBADMODE:        return "EBADMODE";
     #endif
     /* Linux, IRIX, Solaris, Cygwin */
-    #if defined EBADR
+    #if defined EBADR && EBADR != EFRAGS
     case EBADR:           return "EBADR";
     #endif
     /* Minix */
@@ -407,6 +410,10 @@ strerrorname_np (int errnum)
     #if defined ECKPT
     case ECKPT:           return "ECKPT";
     #endif
+    /* Solaris */
+    #if defined ECKSUM
+    case ECKSUM:          return "ECKSUM";
+    #endif
     /* IRIX */
     #if defined ECLOCKCPU
     case ECLOCKCPU:       return "ECLOCKCPU";
@@ -464,7 +471,7 @@ strerrorname_np (int errnum)
     case EDIED:           return "EDIED";
     #endif
     /* IRIX */
-    #if defined EDIRCORRUPTED
+    #if defined EDIRCORRUPTED && EDIRCORRUPTED != EFSCORRUPTED
     case EDIRCORRUPTED:   return "EDIRCORRUPTED";
     #endif
     /* FreeBSD */
@@ -488,7 +495,7 @@ strerrorname_np (int errnum)
     case EDONTREPLY:      return "EDONTREPLY";
     #endif
     /* FreeBSD */
-    #if defined EDOOFUS
+    #if defined EDOOFUS && EDOOFUS != EINVAL
     case EDOOFUS:         return "EDOOFUS";
     #endif
     /* Linux, HP-UX, Cygwin */
@@ -566,6 +573,10 @@ strerrorname_np (int errnum)
     /* Haiku */
     #if defined EFPOS
     case EFPOS:           return "EFPOS";
+    #endif
+    /* Solaris */
+    #if defined EFRAGS
+    case EFRAGS:          return "EFRAGS";
     #endif
     /* IRIX */
     #if defined EFSCORRUPTED
@@ -1016,7 +1027,7 @@ strerrorname_np (int errnum)
     case ENMFILE:         return "ENMFILE";
     #endif
     /* Linux, IRIX, Solaris, Cygwin */
-    #if defined ENOANO
+    #if defined ENOANO && ENOANO != ENOKEY
     case ENOANO:          return "ENOANO";
     #endif
     /* IRIX */
@@ -1115,7 +1126,7 @@ strerrorname_np (int errnum)
     #if defined ENOSHARE
     case ENOSHARE:        return "ENOSHARE";
     #endif
-    /* HP-UX, OSF/1 */
+    /* Linux, HP-UX, OSF/1 */
     #if defined ENOSYM
     case ENOSYM:          return "ENOSYM";
     #endif
@@ -1239,7 +1250,7 @@ strerrorname_np (int errnum)
     #if defined EREMOTEIO
     case EREMOTEIO:       return "EREMOTEIO";
     #endif
-    /* HP-UX */
+    /* Linux, HP-UX */
     #if defined EREMOTERELEASE
     case EREMOTERELEASE:  return "EREMOTERELEASE";
     #endif
@@ -1270,10 +1281,6 @@ strerrorname_np (int errnum)
     /* Haiku */
     #if defined ESIGPARM
     case ESIGPARM:        return "ESIGPARM";
-    #endif
-    /* Linux, Mac OS X, FreeBSD, NetBSD, OpenBSD, AIX, HP-UX, IRIX, OSF/1, Solaris, Minix, Cygwin */
-    #if defined ESOCKTNOSUPPORT
-    case ESOCKTNOSUPPORT: return "ESOCKTNOSUPPORT";
     #endif
     /* AIX, OSF/1 */
     #if defined ESOFT

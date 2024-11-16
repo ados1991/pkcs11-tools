@@ -1,9 +1,10 @@
-# serial 14
-
-# Copyright (C) 2000-2001, 2005-2006, 2009-2021 Free Software Foundation, Inc.
-# This file is free software; the Free Software Foundation
-# gives unlimited permission to copy and/or distribute it,
-# with or without modifications, as long as this notice is preserved.
+# rmdir-errno.m4
+# serial 16
+dnl Copyright (C) 2000-2001, 2005-2006, 2009-2024 Free Software Foundation, Inc.
+dnl This file is free software; the Free Software Foundation
+dnl gives unlimited permission to copy and/or distribute it,
+dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 # When rmdir fails because the specified directory is not empty, it sets
 # errno to some value, usually ENOTEMPTY.  However, on some AIX systems,
@@ -34,7 +35,7 @@ AC_DEFUN([gl_FUNC_RMDIR_NOTEMPTY],
           rmdir ("confdir2");
           val = errno;
           s = fopen ("confdir2/errno", "w");
-          fprintf (s, "%d\n", val);
+          fprintf (s, "%d", val);
           fclose (s);
           return 0;
         }
@@ -42,9 +43,9 @@ AC_DEFUN([gl_FUNC_RMDIR_NOTEMPTY],
         [gl_cv_func_rmdir_errno_not_empty=`cat confdir2/errno`],
         [gl_cv_func_rmdir_errno_not_empty='configure error in rmdir-errno.m4'],
         [case "$host_os" in
-                   # Guess ENOTEMPTY = 41 on native Windows.
-           mingw*) gl_cv_func_rmdir_errno_not_empty=ENOTEMPTY ;;
-           *)      gl_cv_func_rmdir_errno_not_empty=ENOTEMPTY ;;
+                              # Guess ENOTEMPTY = 41 on native Windows.
+           mingw* | windows*) gl_cv_func_rmdir_errno_not_empty=ENOTEMPTY ;;
+           *)                 gl_cv_func_rmdir_errno_not_empty=ENOTEMPTY ;;
          esac
         ])
     ]

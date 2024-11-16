@@ -9,12 +9,24 @@ lib/classpath.c
 
 Depends-on:
 stdbool
+stat
+error
+dirname
+xconcat-filename
+canonicalize
+cygpath
 execute
+spawn-pipe
+wait-process
 xsetenv
+scandir
+alphasort
 sh-quote
 xalloc
 xmalloca
-error
+copy-file
+clean-temp-simple
+clean-temp
 gettext-h
 csharpexec-script
 
@@ -28,7 +40,9 @@ Include:
 "csharpexec.h"
 
 Link:
-$(LIB_MBRTOWC)
+$(LTLIBUNISTRING) when linking with libtool, $(LIBUNISTRING) otherwise
+$(MBRTOWC_LIB)
+$(LTLIBC32CONV) when linking with libtool, $(LIBC32CONV) otherwise
 $(LIBTHREAD)
 
 License:

@@ -1,10 +1,10 @@
 /* quotearg.c - quote arguments for output
 
-   Copyright (C) 1998-2002, 2004-2021 Free Software Foundation, Inc.
+   Copyright (C) 1998-2002, 2004-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -17,14 +17,14 @@
 
 /* Written by Paul Eggert <eggert@twinsun.com> */
 
+#include <config.h>
+
 /* Without this pragma, gcc 4.7.0 20111124 mistakenly suggests that
    the quoting_options_from_style function might be candidate for
    attribute 'pure'  */
-#if (__GNUC__ == 4 && 6 <= __GNUC_MINOR__) || 4 < __GNUC__
+#if _GL_GNUC_PREREQ (4, 6)
 # pragma GCC diagnostic ignored "-Wsuggest-attribute=pure"
 #endif
-
-#include <config.h>
 
 #include "quotearg.h"
 #include "quote.h"
@@ -38,12 +38,11 @@
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <uchar.h>
 #include <wchar.h>
-#include <wctype.h>
 
 #include "gettext.h"
 #define _(msgid) gettext (msgid)
@@ -87,7 +86,7 @@ char const *const quoting_style_args[] =
   "escape",
   "locale",
   "clocale",
-  0
+  NULL
 };
 
 /* Correspondences to quoting style names.  */
@@ -256,12 +255,11 @@ quotearg_buffer_restyled (char *buffer, size_t buffersize,
   size_t i;
   size_t len = 0;
   size_t orig_buffersize = 0;
-  char const *quote_string = 0;
+  char const *quote_string = NULL;
   size_t quote_string_len = 0;
   bool backslash_escapes = false;
   bool unibyte_locale = MB_CUR_MAX == 1;
   bool elide_outer_quotes = (flags & QA_ELIDE_OUTER_QUOTES) != 0;
-  bool pending_shell_escape_end = false;
   bool encountered_single_quote = false;
   bool all_c_and_shell_quote_compat = true;
 
@@ -304,7 +302,8 @@ quotearg_buffer_restyled (char *buffer, size_t buffersize,
       } \
     while (0)
 
- process_input:
+ process_input: ;
+  bool pending_shell_escape_end = false;
 
   switch (quoting_style)
     {
@@ -532,12 +531,9 @@ quotearg_buffer_restyled (char *buffer, size_t buffersize,
         case '<':
         case '=': /* sometimes special in 0th or (with "set -k") later args */
         case '>': case '[':
-        case '^': /* special in old /bin/sh, e.g. SunOS 4.1.4 */
+        case '^': /* special in old /bin/sh, e.g., Solaris 10 */
         case '`': case '|':
-          /* A shell special character.  In theory, '$' and '`' could
-             be the first bytes of multibyte characters, which means
-             we should check them with mbrtowc, but in practice this
-             doesn't happen so it's not worth worrying about.  */
+          /* A shell special character.  */
           if (quoting_style == shell_always_quoting_style
               && elide_outer_quotes)
             goto force_outer_quoting_style;
@@ -612,18 +608,18 @@ quotearg_buffer_restyled (char *buffer, size_t buffersize,
             else
               {
                 mbstate_t mbstate;
-                memset (&mbstate, 0, sizeof mbstate);
+                mbszero (&mbstate);
 
                 m = 0;
                 printable = true;
                 if (argsize == SIZE_MAX)
                   argsize = strlen (arg);
 
-                do
+                for (;;)
                   {
-                    wchar_t w;
-                    size_t bytes = mbrtowc (&w, &arg[i + m],
-                                            argsize - (i + m), &mbstate);
+                    char32_t w;
+                    size_t bytes = mbrtoc32 (&w, &arg[i + m],
+                                             argsize - (i + m), &mbstate);
                     if (bytes == 0)
                       break;
                     else if (bytes == (size_t) -1)
@@ -640,6 +636,10 @@ quotearg_buffer_restyled (char *buffer, size_t buffersize,
                       }
                     else
                       {
+                        #if !GNULIB_MBRTOC32_REGULAR
+                        if (bytes == (size_t) -3)
+                          bytes = 0;
+                        #endif
                         /* Work around a bug with older shells that "see" a '\'
                            that is really the 2nd byte of a multibyte character.
                            In practice the problem is limited to ASCII
@@ -660,12 +660,15 @@ quotearg_buffer_restyled (char *buffer, size_t buffersize,
                                 }
                           }
 
-                        if (! iswprint (w))
+                        if (! c32isprint (w))
                           printable = false;
                         m += bytes;
                       }
+                    #if !GNULIB_MBRTOC32_REGULAR
+                    if (mbsinit (&mbstate))
+                    #endif
+                      break;
                   }
-                while (! mbsinit (&mbstate));
               }
 
             c_and_shell_quote_compat = printable;
@@ -808,7 +811,7 @@ quotearg_alloc_mem (char const *arg, size_t argsize, size_t *size,
   int e = errno;
   /* Elide embedded null bytes if we can't return a size.  */
   int flags = p->flags | (size ? 0 : QA_ELIDE_NULL_BYTES);
-  size_t bufsize = quotearg_buffer_restyled (0, 0, arg, argsize, p->style,
+  size_t bufsize = quotearg_buffer_restyled (NULL, 0, arg, argsize, p->style,
                                              flags, p->quote_these_too,
                                              p->left_quote,
                                              p->right_quote) + 1;

@@ -1,9 +1,9 @@
 /* Test of passing file descriptors.
-   Copyright (C) 2011-2021 Free Software Foundation, Inc.
+   Copyright (C) 2011-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -34,7 +34,12 @@
 int
 main ()
 {
-#if HAVE_SOCKETPAIR
+#if defined __CYGWIN__
+  /* Cygwin does not support file-descriptor passing: As on Cygwin 3.5.3,
+     the only cmsg_type that winsup/cygwin/fhandler/socket_unix.cc handles
+     is SCM_CREDENTIALS.  Not SCM_RIGHTS.  */
+  return 90;
+#elif HAVE_SOCKETPAIR
   int pair[2];
   int ret;
   pid_t pid;
@@ -124,7 +129,7 @@ main ()
       ASSERT (fd == -1);
       ASSERT (errno == ENOTCONN);
 
-      return 0;
+      return test_exit_status;
     }
 #else
   errno = 0;
@@ -135,6 +140,8 @@ main ()
   ASSERT(recvfd (0, 0) == -1);
   ASSERT(errno == ENOSYS);
 
+  if (test_exit_status != EXIT_SUCCESS)
+    return test_exit_status;
   fputs ("skipping test: socketpair not supported on this system\n",
          stderr);
   return 77;

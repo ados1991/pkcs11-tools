@@ -1,6 +1,6 @@
 /* A substitute <strings.h>.
 
-   Copyright (C) 2007-2021 Free Software Foundation, Inc.
+   Copyright (C) 2007-2024 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -36,6 +36,11 @@
 #ifndef _@GUARD_PREFIX@_STRINGS_H
 #define _@GUARD_PREFIX@_STRINGS_H
 
+/* This file uses GNULIB_POSIXCHECK, HAVE_RAW_DECL_*.  */
+#if !_GL_CONFIG_H_INCLUDED
+ #error "Please include config.h first."
+#endif
+
 #if ! @HAVE_DECL_STRNCASECMP@
 /* Get size_t.  */
 # include <stddef.h>
@@ -56,7 +61,7 @@ extern "C" {
   /* Find the index of the least-significant set bit.  */
 #if @GNULIB_FFS@
 # if !@HAVE_FFS@
-_GL_FUNCDECL_SYS (ffs, int, (int i));
+_GL_FUNCDECL_SYS (ffs, int, (int i), );
 # endif
 _GL_CXXALIAS_SYS (ffs, int, (int i));
 _GL_CXXALIASWARN (ffs);

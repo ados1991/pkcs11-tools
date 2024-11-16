@@ -1,8 +1,10 @@
-# dup3.m4 serial 5
-dnl Copyright (C) 2009-2021 Free Software Foundation, Inc.
+# dup3.m4
+# serial 7
+dnl Copyright (C) 2009-2024 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 AC_DEFUN([gl_FUNC_DUP3],
 [
@@ -11,9 +13,15 @@ AC_DEFUN([gl_FUNC_DUP3],
   dnl Persuade glibc <unistd.h> to declare dup3().
   AC_REQUIRE([AC_USE_SYSTEM_EXTENSIONS])
 
-  AC_CHECK_FUNCS_ONCE([dup3 setdtablesize])
+  AC_CHECK_FUNCS_ONCE([setdtablesize])
+  gl_CHECK_FUNCS_ANDROID([dup3], [[#include <unistd.h>]])
   if test $ac_cv_func_dup3 != yes; then
     HAVE_DUP3=0
+    case "$gl_cv_onwards_func_dup3" in
+      future*) REPLACE_DUP3=1 ;;
+    esac
+  else
+    REPLACE_DUP3=1
   fi
 
 dnl Not needed yet, because dup3 is unconditionally replaced.

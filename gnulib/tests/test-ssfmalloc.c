@@ -1,9 +1,9 @@
 /* Test of simple and straight-forward malloc implementation.
-   Copyright (C) 2020-2021 Free Software Foundation, Inc.
+   Copyright (C) 2020-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -30,17 +30,8 @@
 
 #else
 
-/* Declare getpagesize(). */
+/* Declare sysconf().  */
 # include <unistd.h>
-/* On HP-UX, getpagesize exists, but it is not declared in <unistd.h> even if
-   the compiler options -D_HPUX_SOURCE -D_XOPEN_SOURCE=600 are used.  */
-# ifdef __hpux
-extern
-#  ifdef __cplusplus
-       "C"
-#  endif
-       int getpagesize (void);
-# endif
 
 /* Declare mmap().  */
 # include <sys/types.h>
@@ -72,7 +63,7 @@ init_pagesize (void)
   GetSystemInfo (&info);
   pagesize = info.dwPageSize;
 #else
-  pagesize = getpagesize ();
+  pagesize = sysconf (_SC_PAGESIZE);
 #endif
 }
 
@@ -354,5 +345,5 @@ main (int argc, char *argv[])
     }
   }
 
-  return 0;
+  return test_exit_status;
 }

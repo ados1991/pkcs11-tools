@@ -1,9 +1,9 @@
 /* Test of POSIX spin locks.
-   Copyright (C) 2005, 2008-2021 Free Software Foundation, Inc.
+   Copyright (C) 2005, 2008-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -85,7 +85,7 @@ static int account[ACCOUNT_COUNT];
 static int
 random_account (void)
 {
-  return ((unsigned int) rand () >> 3) % ACCOUNT_COUNT;
+  return ((unsigned long) random () >> 3) % ACCOUNT_COUNT;
 }
 
 static void
@@ -124,7 +124,7 @@ lock_mutator_thread (void *arg)
 
       i1 = random_account ();
       i2 = random_account ();
-      value = ((unsigned int) rand () >> 3) % 10;
+      value = ((unsigned long) random () >> 3) % 10;
       account[i1] += value;
       account[i2] -= value;
 
@@ -212,7 +212,7 @@ main ()
   test_pthread_spin ();
   printf (" OK\n"); fflush (stdout);
 
-  return 0;
+  return test_exit_status;
 }
 
 #else

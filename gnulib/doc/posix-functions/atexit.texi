@@ -1,10 +1,11 @@
 @node atexit
-@section @code{atexit}
+@subsection @code{atexit}
 @findex atexit
 
-POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9699919799/functions/atexit.html}
+POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9799919799/functions/atexit.html}
 
 Gnulib module: atexit
+@mindex atexit
 
 Portability problems fixed by Gnulib:
 @itemize

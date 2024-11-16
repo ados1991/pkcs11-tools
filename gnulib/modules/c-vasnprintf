@@ -11,7 +11,6 @@ lib/printf-parse.h
 lib/printf-parse.c
 lib/vasnprintf.h
 lib/vasnprintf.c
-m4/wchar_t.m4
 m4/wint_t.m4
 m4/intmax_t.m4
 m4/stdint_h.m4
@@ -22,15 +21,12 @@ m4/math_h.m4
 m4/exponentd.m4
 
 Depends-on:
+assert-h
 attribute
+limits-h
+stdint
 stdio
-isnand-nolibm
-isnanl-nolibm
-frexpl-nolibm
-printf-frexp
-printf-frexpl
-signbit
-fpucw
+mixin/printf-posix
 free-posix
 nocrash
 printf-safe
@@ -39,11 +35,15 @@ xsize
 errno
 memchr
 multiarch
-verify
+mbszero
 
 configure.ac:
 AC_REQUIRE([AC_C_RESTRICT])
-gl_PREREQ_VASNPRINTF_WITH_EXTRAS
+AC_LIBOBJ([printf-args])
+AC_LIBOBJ([printf-parse])
+gl_PREREQ_PRINTF_ARGS
+gl_PREREQ_PRINTF_PARSE
+gl_PREREQ_VASNPRINTF_WITH_POSIX_EXTRAS
 
 Makefile.am:
 lib_SOURCES += c-vasnprintf.c
@@ -52,7 +52,7 @@ Include:
 "c-vasnprintf.h"
 
 License:
-GPL
+LGPLv2+
 
 Maintainer:
-Ben Pfaff
+all

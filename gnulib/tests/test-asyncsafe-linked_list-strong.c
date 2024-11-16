@@ -1,9 +1,9 @@
 /* Test of async-safe sequential list data type implementation.
-   Copyright (C) 2021 Free Software Foundation, Inc.
+   Copyright (C) 2021-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -44,7 +44,7 @@
 #include <config.h>
 
 /* Work around GCC bug 44511.  */
-#if 4 < __GNUC__ + (3 <= __GNUC_MINOR__)
+#if _GL_GNUC_PREREQ (4, 3)
 # pragma GCC diagnostic ignored "-Wreturn-type"
 #endif
 
@@ -248,7 +248,7 @@ signal_sending_thread (void *arg)
   printf ("Sent %u signals. Received %u signals. Done after %u mutations.\n",
           num_signals_sent, num_signals_arrived, num_mutations);
 
-  exit (0);
+  exit (test_exit_status);
 
   /*NOTREACHED*/
 }

@@ -1,9 +1,9 @@
 /* Copy a file descriptor, applying specific flags.
-   Copyright (C) 2009-2021 Free Software Foundation, Inc.
+   Copyright (C) 2009-2024 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
-   published by the Free Software Foundation; either version 3 of the
+   published by the Free Software Foundation, either version 3 of the
    License, or (at your option) any later version.
 
    This file is distributed in the hope that it will be useful,
@@ -45,6 +45,15 @@ dup3 (int oldfd, int newfd, int flags)
         if (!(result < 0 && errno == ENOSYS))
           {
             have_dup3_really = 1;
+            /* On NetBSD dup3 is a no-op when oldfd == newfd, but we are
+               expected to fail with error EINVAL.  */
+# ifdef __NetBSD__
+            if (newfd == oldfd)
+              {
+                errno = EINVAL;
+                return -1;
+              }
+# endif
 # if REPLACE_FCHDIR
             if (0 <= result)
               result = _gl_register_dup (oldfd, newfd);

@@ -6,6 +6,7 @@ lib/btoc32.c
 
 Depends-on:
 uchar
+mbszero
 mbrtoc32
 btowc
 
@@ -17,6 +18,10 @@ lib_SOURCES += btoc32.c
 
 Include:
 <uchar.h>
+
+Link:
+$(LTLIBUNISTRING) when linking with libtool, $(LIBUNISTRING) otherwise
+$(LTLIBC32CONV) when linking with libtool, $(LIBC32CONV) otherwise
 
 License:
 LGPLv2+

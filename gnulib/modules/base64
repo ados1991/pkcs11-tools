@@ -7,9 +7,11 @@ lib/base64.c
 m4/base64.m4
 
 Depends-on:
+extern-inline
 ialloc
 stdbool
 memchr
+stdckdint
 
 configure.ac:
 gl_FUNC_BASE64

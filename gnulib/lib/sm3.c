@@ -5,7 +5,7 @@
    SM3 cryptographic hash algorithm.
    <http://www.sca.gov.cn/sca/xwdt/2010-12/17/content_1002389.shtml>
 
-   Copyright (C) 2017-2021 Free Software Foundation, Inc.
+   Copyright (C) 2017-2024 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -31,7 +31,6 @@
 #endif
 #include "sm3.h"
 
-#include <stdalign.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -323,8 +322,8 @@ sm3_process_block (const void *buffer, size_t len, struct sm3_ctx *ctx)
       j = -1;
 
       dbg_printf (" j    A        B        C        D        E  "
-                  "      F        G        H\n");
-      dbg_printf ("   %08x %08x %08x %08x %08x %08x %08x %08x\n",
+                  "      F        G        H\n"
+                  "   %08x %08x %08x %08x %08x %08x %08x %08x\n",
                   a, b, c, d, e, f, g, h);
 
       R1( a, b, c, d, e, f, g, h, T( 0), W1( 0), W1( 4) );

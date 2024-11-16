@@ -1,16 +1,17 @@
 @node strtoumax
-@section @code{strtoumax}
+@subsection @code{strtoumax}
 @findex strtoumax
 
-POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9699919799/functions/strtoumax.html}
+POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9799919799/functions/strtoumax.html}
 
 Gnulib module: strtoumax
+@mindex strtoumax
 
 Portability problems fixed by Gnulib:
 @itemize
 @item
 This function is missing on some platforms:
-OpenBSD 3.8, Minix 3.1.8, AIX 5.1, IRIX 6.5, Solaris 9, MSVC 9.
+OpenBSD 3.8, Minix 3.1.8, AIX 5.1, Solaris 9, MSVC 9.
 @end itemize
 
 Portability problems not fixed by Gnulib:

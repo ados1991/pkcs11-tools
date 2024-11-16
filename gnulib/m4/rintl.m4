@@ -1,8 +1,10 @@
-# rintl.m4 serial 8
-dnl Copyright (C) 2011-2021 Free Software Foundation, Inc.
+# rintl.m4
+# serial 11
+dnl Copyright (C) 2011-2024 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 AC_DEFUN([gl_FUNC_RINTL],
 [
@@ -21,7 +23,7 @@ AC_DEFUN([gl_FUNC_RINTL],
       AC_CACHE_CHECK([whether rintl works],
         [gl_cv_func_rintl_works],
         [
-          save_LIBS="$LIBS"
+          saved_LIBS="$LIBS"
           LIBS="$LIBS $RINTL_LIBM"
           AC_RUN_IFELSE(
             [AC_LANG_SOURCE([[
@@ -50,17 +52,17 @@ int main (int argc, char *argv[])
             [gl_cv_func_rintl_works=yes],
             [gl_cv_func_rintl_works=no],
             [case "$host_os" in
-                              # Guess yes on glibc systems.
-               *-gnu* | gnu*) gl_cv_func_rintl_works="guessing yes" ;;
-                              # Guess yes on musl systems.
-               *-musl*)       gl_cv_func_rintl_works="guessing yes" ;;
-                              # Guess yes on native Windows.
-               mingw*)        gl_cv_func_rintl_works="guessing yes" ;;
-                              # If we don't know, obey --enable-cross-guesses.
-               *)             gl_cv_func_rintl_works="$gl_cross_guess_normal" ;;
+                                   # Guess yes on glibc systems.
+               *-gnu* | gnu*)      gl_cv_func_rintl_works="guessing yes" ;;
+                                   # Guess yes on musl systems.
+               *-musl* | midipix*) gl_cv_func_rintl_works="guessing yes" ;;
+                                   # Guess yes on native Windows.
+               mingw* | windows*)  gl_cv_func_rintl_works="guessing yes" ;;
+                                   # If we don't know, obey --enable-cross-guesses.
+               *)                  gl_cv_func_rintl_works="$gl_cross_guess_normal" ;;
              esac
             ])
-          LIBS="$save_LIBS"
+          LIBS="$saved_LIBS"
         ])
       case "$gl_cv_func_rintl_works" in
         *yes) ;;

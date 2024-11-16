@@ -1,7 +1,7 @@
 /* Emulation for poll(2)
    Contributed by Paolo Bonzini.
 
-   Copyright 2001-2003, 2006-2021 Free Software Foundation, Inc.
+   Copyright 2001-2003, 2006-2024 Free Software Foundation, Inc.
 
    This file is part of gnulib.
 
@@ -17,11 +17,6 @@
 
    You should have received a copy of the GNU Lesser General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
-
-/* Tell gcc not to warn about the (nfd < 0) tests, below.  */
-#if (__GNUC__ == 4 && 3 <= __GNUC_MINOR__) || 4 < __GNUC__
-# pragma GCC diagnostic ignored "-Wtype-limits"
-#endif
 
 #include <config.h>
 #include <alloca.h>
@@ -396,14 +391,15 @@ poll (struct pollfd *pfd, nfds_t nfd, int timeout)
   if (timeout == 0)
     {
       ptv = &tv;
-      ptv->tv_sec = 0;
-      ptv->tv_usec = 0;
+      tv = (struct timeval) {0};
     }
   else if (timeout > 0)
     {
       ptv = &tv;
-      ptv->tv_sec = timeout / 1000;
-      ptv->tv_usec = (timeout % 1000) * 1000;
+      tv = (struct timeval) {
+        .tv_sec = timeout / 1000,
+        .tv_usec = (timeout % 1000) * 1000
+      };
     }
   else if (timeout == INFTIM)
     /* wait forever */

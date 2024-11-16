@@ -1,10 +1,10 @@
 /* Case-insensitive searching in a string.  -*- coding: utf-8 -*-
-   Copyright (C) 2005-2021 Free Software Foundation, Inc.
+   Copyright (C) 2005-2024 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2005.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
-   published by the Free Software Foundation; either version 3 of the
+   published by the Free Software Foundation, either version 3 of the
    License, or (at your option) any later version.
 
    This file is distributed in the hope that it will be useful,
@@ -21,18 +21,22 @@
 #include <string.h>
 
 #include <ctype.h>
-#include <stdbool.h>
 #include <stddef.h>  /* for NULL, in case a nonstandard string.h lacks it */
 #include <stdlib.h>
 
 #include "malloca.h"
-#include "mbuiter.h"
 
-#define TOLOWER(Ch) (isupper (Ch) ? tolower (Ch) : (Ch))
+#if GNULIB_MCEL_PREFER
+# include "mcel.h"
+typedef mcel_t mbchar_t;
+static bool mb_equal (mcel_t a, mcel_t b) { return mcel_cmp (a, b) == 0; }
+#else
+# include "mbuiter.h"
+#endif
 
 /* Knuth-Morris-Pratt algorithm.  */
 #define UNIT unsigned char
-#define CANON_ELEMENT(c) TOLOWER (c)
+#define CANON_ELEMENT(c) tolower (c)
 #include "str-kmp.h"
 
 /* Knuth-Morris-Pratt algorithm.
@@ -46,16 +50,31 @@ knuth_morris_pratt_multibyte (const char *haystack, const char *needle,
 {
   size_t m = mbslen (needle);
   mbchar_t *needle_mbchars;
-  size_t *table;
+  size_t extra_align = (alignof (mbchar_t) < alignof (size_t)
+                        ? alignof (size_t) - alignof (mbchar_t)
+                        : 0);
 
   /* Allocate room for needle_mbchars and the table.  */
-  char *memory = (char *) nmalloca (m, sizeof (mbchar_t) + sizeof (size_t));
+  void *memory = nmalloca (m + !!extra_align,
+                           sizeof (mbchar_t) + sizeof (size_t));
+  void *table_memory;
   if (memory == NULL)
     return false;
-  needle_mbchars = (mbchar_t *) memory;
-  table = (size_t *) (memory + m * sizeof (mbchar_t));
+  needle_mbchars = memory;
+  table_memory = needle_mbchars + m;
+  char *aligned = table_memory;
+  aligned += extra_align;
+  aligned -= (uintptr_t) aligned % alignof (size_t);
+  size_t *table = table_memory = aligned;
 
   /* Fill needle_mbchars.  */
+#if GNULIB_MCEL_PREFER
+  for (size_t j = 0; *needle; needle += needle_mbchars[j++].len)
+    {
+      needle_mbchars[j] = mcel_scanz (needle);
+      needle_mbchars[j].ch = c32tolower (needle_mbchars[j].ch);
+    }
+#else
   {
     mbui_iterator_t iter;
     size_t j;
@@ -65,9 +84,10 @@ knuth_morris_pratt_multibyte (const char *haystack, const char *needle,
       {
         mb_copy (&needle_mbchars[j], &mbui_cur (iter));
         if (needle_mbchars[j].wc_valid)
-          needle_mbchars[j].wc = towlower (needle_mbchars[j].wc);
+          needle_mbchars[j].wc = c32tolower (needle_mbchars[j].wc);
       }
   }
+#endif
 
   /* Fill the table.
      For 0 < i < m:
@@ -138,6 +158,47 @@ knuth_morris_pratt_multibyte (const char *haystack, const char *needle,
 
   /* Search, using the table to accelerate the processing.  */
   {
+#if GNULIB_MCEL_PREFER
+    size_t j;
+    char const *rhaystack = haystack;
+    char const *phaystack = haystack;
+
+    j = 0;
+    /* Invariant: phaystack = rhaystack + j.  */
+    for (;;)
+      {
+        if (!*phaystack)
+          {
+            rhaystack = NULL;
+            break;
+          }
+        mcel_t g = mcel_scanz (phaystack);
+        g.ch = c32tolower (g.ch);
+        if (mcel_cmp (needle_mbchars[j], g) == 0)
+          {
+            j++;
+            /* Exit loop successfully if the entire needle has been found.  */
+            if (j == m)
+              break;
+            phaystack += g.len;
+          }
+        else if (j == 0)
+          {
+            /* Found a mismatch at needle[0] already.  */
+            rhaystack += mcel_scanz (rhaystack).len;
+            phaystack += g.len;
+          }
+        else
+          {
+            /* Found a match of needle[0..j-1], mismatch at needle[j].  */
+            size_t count = table[j];
+            j -= count;
+            for (; count != 0; count--)
+              rhaystack += mcel_scanz (rhaystack).len;
+          }
+      }
+    *resultp = rhaystack;
+#else
     size_t j;
     mbui_iterator_t rhaystack;
     mbui_iterator_t phaystack;
@@ -153,7 +214,7 @@ knuth_morris_pratt_multibyte (const char *haystack, const char *needle,
 
         mb_copy (&c, &mbui_cur (phaystack));
         if (c.wc_valid)
-          c.wc = towlower (c.wc);
+          c.wc = c32tolower (c.wc);
         if (mb_equal (needle_mbchars[j], c))
           {
             j++;
@@ -186,6 +247,7 @@ knuth_morris_pratt_multibyte (const char *haystack, const char *needle,
             mbui_advance (phaystack);
           }
       }
+#endif
   }
 
   freea (memory);
@@ -206,6 +268,90 @@ mbscasestr (const char *haystack, const char *needle)
          needle may be found in haystack.  */
   if (MB_CUR_MAX > 1)
     {
+#if GNULIB_MCEL_PREFER
+      if (!*needle)
+        return (char *) haystack;
+
+      mcel_t ng = mcel_scanz (needle);
+      ng.ch = c32tolower (ng.ch);
+
+      /* Minimizing the worst-case complexity:
+         Let n = mbslen(haystack), m = mbslen(needle).
+         The naïve algorithm is O(n*m) worst-case.
+         The Knuth-Morris-Pratt algorithm is O(n) worst-case but it needs a
+         memory allocation.
+         To achieve linear complexity and yet amortize the cost of the
+         memory allocation, we activate the Knuth-Morris-Pratt algorithm
+         only once the naïve algorithm has already run for some time; more
+         precisely, when
+           - the outer loop count is >= 10,
+           - the average number of comparisons per outer loop is >= 5,
+           - the total number of comparisons is >= m.
+         But we try it only once.  If the memory allocation attempt failed,
+         we don't retry it.  */
+      bool try_kmp = true;
+      size_t outer_loop_count = 0;
+      size_t comparison_count = 0;
+
+      /* Last comparison count, and needle + last_ccount.  */
+      size_t last_ccount = 0;
+      char const *iter_needle_last_ccount = needle;
+
+      char const *iter_haystack = haystack;
+
+      for (mcel_t hg; *iter_haystack; iter_haystack += hg.len)
+        {
+          /* See whether it's advisable to use an asymptotically faster
+             algorithm.  */
+          if (try_kmp
+              && outer_loop_count >= 10
+              && comparison_count >= 5 * outer_loop_count)
+            {
+              /* See if needle + comparison_count now reaches the end of
+                 needle.  */
+              size_t count = comparison_count - last_ccount;
+              for (;
+                   count > 0 && *iter_needle_last_ccount;
+                   count--)
+                iter_needle_last_ccount
+                  += mcel_scanz (iter_needle_last_ccount).len;
+              last_ccount = comparison_count;
+              if (!*iter_needle_last_ccount)
+                {
+                  char const *result;
+                  if (knuth_morris_pratt_multibyte (haystack, needle,
+                                                    &result))
+                    return (char *) result;
+                  try_kmp = false;
+                }
+            }
+
+          outer_loop_count++;
+          comparison_count++;
+          hg = mcel_scanz (iter_haystack);
+          hg.ch = c32tolower (hg.ch);
+          if (mcel_cmp (hg, ng) == 0)
+            /* The first character matches.  */
+            {
+              char const *rhaystack = iter_haystack + hg.len;
+              char const *rneedle = needle + ng.len;
+              mcel_t rhg, rng;
+              do
+                {
+                  if (!*rneedle)
+                    return (char *) iter_haystack;
+                  if (!*rhaystack)
+                    return NULL;
+                  rhg = mcel_scanz (rhaystack); rhaystack += rhg.len;
+                  rng = mcel_scanz (rneedle); rneedle += rng.len;
+                  comparison_count++;
+                }
+              while (mcel_tocmp (c32tolower, rhg, rng) == 0);
+            }
+        }
+
+      return NULL;
+#else
       mbui_iterator_t iter_needle;
 
       mbui_init (iter_needle, needle);
@@ -238,7 +384,7 @@ mbscasestr (const char *haystack, const char *needle)
 
           mb_copy (&b, &mbui_cur (iter_needle));
           if (b.wc_valid)
-            b.wc = towlower (b.wc);
+            b.wc = c32tolower (b.wc);
 
           mbui_init (iter_haystack, haystack);
           for (;; mbui_advance (iter_haystack))
@@ -280,7 +426,7 @@ mbscasestr (const char *haystack, const char *needle)
               comparison_count++;
               mb_copy (&c, &mbui_cur (iter_haystack));
               if (c.wc_valid)
-                c.wc = towlower (c.wc);
+                c.wc = c32tolower (c.wc);
               if (mb_equal (c, b))
                 /* The first character matches.  */
                 {
@@ -314,6 +460,7 @@ mbscasestr (const char *haystack, const char *needle)
         }
       else
         return (char *) haystack;
+#endif
     }
   else
     {
@@ -340,8 +487,9 @@ mbscasestr (const char *haystack, const char *needle)
           const char *needle_last_ccount = needle; /* = needle + last_ccount */
 
           /* Speed up the following searches of needle by caching its first
-             character.  */
-          unsigned char b = TOLOWER ((unsigned char) *needle);
+             character and lowercase counterpart.  */
+          unsigned char B = *needle;
+          unsigned char b = tolower (B);
 
           needle++;
           for (;; haystack++)
@@ -384,7 +532,8 @@ mbscasestr (const char *haystack, const char *needle)
 
               outer_loop_count++;
               comparison_count++;
-              if (TOLOWER ((unsigned char) *haystack) == b)
+              unsigned char H = *haystack;
+              if (H == B || H == b || tolower (H) == b)
                 /* The first character matches.  */
                 {
                   const char *rhaystack = haystack + 1;
@@ -399,8 +548,9 @@ mbscasestr (const char *haystack, const char *needle)
                         /* No match.  */
                         return NULL;
                       comparison_count++;
-                      if (TOLOWER ((unsigned char) *rhaystack)
-                          != TOLOWER ((unsigned char) *rneedle))
+                      if (! (*rhaystack == *rneedle
+                             || (tolower ((unsigned char) *rhaystack)
+                                 == tolower ((unsigned char) *rneedle))))
                         /* Nothing in this round.  */
                         break;
                     }

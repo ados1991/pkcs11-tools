@@ -1,5 +1,5 @@
 /* Convert string to 32-bit wide string.
-   Copyright (C) 2020-2021 Free Software Foundation, Inc.
+   Copyright (C) 2020-2024 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2020.
 
    This file is free software: you can redistribute it and/or modify
@@ -17,12 +17,13 @@
 
 #include <config.h>
 
+#define IN_MBSRTOC32S
 /* Specification.  */
 #include <uchar.h>
 
 #include <wchar.h>
 
-#if (HAVE_WORKING_MBRTOC32 && !defined __GLIBC__) || _GL_LARGE_CHAR32_T
+#if (HAVE_WORKING_MBRTOC32 && HAVE_WORKING_C32RTOMB && !_GL_WCHAR_T_IS_UCS4) || (GL_CHAR32_T_IS_UNICODE && GL_CHAR32_T_VS_WCHAR_T_NEEDS_CONVERSION) || _GL_SMALL_WCHAR_T
 /* The char32_t encoding of a multibyte character may be different than its
    wchar_t encoding, or char32_t is wider than wchar_t.  */
 
@@ -38,15 +39,23 @@ extern mbstate_t _gl_mbsrtoc32s_state;
 # define DCHAR_T char32_t
 # define INTERNAL_STATE _gl_mbsrtoc32s_state
 # define MBRTOWC mbrtoc32
+# if GNULIB_MBRTOC32_REGULAR
+   /* If the 'mbrtoc32-regular' module is in use, we don't need to handle
+      a (size_t)(-3) return value from mbrtoc32.  */
+#  define USES_C32 0
+# else
+#  define USES_C32 1
+# endif
 # include "mbsrtowcs-impl.h"
 
 #else
 /* char32_t and wchar_t are equivalent.  */
 
-# include "verify.h"
+static_assert (sizeof (char32_t) == sizeof (wchar_t));
 
-verify (sizeof (char32_t) == sizeof (wchar_t));
-
+# if _GL_WCHAR_T_IS_UCS4
+_GL_EXTERN_INLINE
+# endif
 size_t
 mbsrtoc32s (char32_t *dest, const char **srcp, size_t len, mbstate_t *ps)
 {

@@ -1,10 +1,10 @@
 /* Save and restore the working directory, possibly using a child process.
 
-   Copyright (C) 2006-2007, 2009-2021 Free Software Foundation, Inc.
+   Copyright (C) 2006-2007, 2009-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -26,7 +26,6 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
-#include <stdbool.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -34,8 +33,15 @@
 
 #include "assure.h"
 #include "attribute.h"
-#include "fcntl-safer.h"
 #include "filename.h"
+
+#if GNULIB_FCNTL_SAFER
+# include "fcntl--.h"
+#endif
+
+#if defined _WIN32 && !defined __CYGWIN__
+# define fork() (assure (false), -1)
+#endif
 
 /* Save the working directory into *WD, if it hasn't been saved
    already.  Return true if a child has been forked to do the real
@@ -48,14 +54,21 @@ savewd_save (struct savewd *wd)
     case INITIAL_STATE:
       /* Save the working directory, or prepare to fall back if possible.  */
       {
-        int fd = open_safer (".", O_SEARCH);
+        int fd = open (".", O_SEARCH);
         if (0 <= fd)
           {
             wd->state = FD_STATE;
             wd->val.fd = fd;
             break;
           }
-        if (errno != EACCES && errno != ESTALE)
+# if O_SEARCH != O_RDONLY || (defined _WIN32 && !defined __CYGWIN__)
+        /* There is no point to forking if O_SEARCH conforms to POSIX,
+           or on native MS-Windows which lacks 'fork'.  */
+        bool try_fork = false;
+# else
+        bool try_fork = errno == EACCES || errno == ESTALE;
+# endif
+        if (!try_fork)
           {
             wd->state = ERROR_STATE;
             wd->val.errnum = errno;

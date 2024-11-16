@@ -1,9 +1,9 @@
 /* Tests of getgroups.
-   Copyright (C) 2009-2021 Free Software Foundation, Inc.
+   Copyright (C) 2009-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -35,7 +35,7 @@ SIGNATURE_CHECK (getgroups, int, (int, gid_t[]));
    any -W options, because getgroups() is declared with
      __attribute__ ((__access__ (__write_only__, 2, 1)))
  */
-#if __GNUC__ >= 7
+#if _GL_GNUC_PREREQ (7, 0)
 # pragma GCC diagnostic ignored "-Wstringop-overflow"
 #endif
 
@@ -84,5 +84,5 @@ main (int argc, _GL_UNUSED char **argv)
         printf ("%d\n", (int) groups[i]);
     }
   free (groups);
-  return 0;
+  return test_exit_status;
 }

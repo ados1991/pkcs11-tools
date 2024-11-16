@@ -1,10 +1,10 @@
 /* Self tests for base64.
-   Copyright (C) 2004, 2008-2021 Free Software Foundation, Inc.
+   Copyright (C) 2004, 2008-2024 Free Software Foundation, Inc.
    Written by Simon Josefsson.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -20,7 +20,6 @@
 #include "base64.h"
 
 #include <stddef.h>
-#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
@@ -234,5 +233,14 @@ main (void)
   ok = base64_decode_alloc_ctx (NULL, "aax=X", 5, &p, &len);
   ASSERT (!ok);
 
-  return 0;
+  ok = base64_decode_alloc_ctx (NULL, "SGVsbG9=", 8, &p, &len);
+  ASSERT (!ok);
+
+  ok = base64_decode_alloc_ctx (NULL, "TR==", 4, &p, &len);
+  ASSERT (!ok);
+
+  ok = base64_decode_alloc_ctx (NULL, "TWF=TWE=", 8, &p, &len);
+  ASSERT (!ok);
+
+  return test_exit_status;
 }

@@ -1,9 +1,9 @@
 /* Test of thread-specific storage in multithreaded situations.
-   Copyright (C) 2005, 2008-2021 Free Software Foundation, Inc.
+   Copyright (C) 2005, 2008-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -71,7 +71,7 @@ perhaps_yield (void)
 {
   /* Call yield () only with a certain probability, otherwise the
      sequence of thread activations may be too predictable.  */
-  if ((((unsigned int) rand () >> 3) % 4) == 0)
+  if ((((unsigned long) random () >> 3) % 4) == 0)
     yield ();
 }
 
@@ -100,7 +100,7 @@ worker_thread (void *arg)
   /* Initialize the per-thread storage.  */
   for (i = 0; i < KEYS_COUNT; i++)
     {
-      values[i] = (((unsigned int) rand () >> 3) % 1000000) * THREAD_COUNT + id;
+      values[i] = (((unsigned long) random () >> 3) % 1000000) * THREAD_COUNT + id;
       /* Hopefully no arithmetic overflow.  */
       if ((values[i] % THREAD_COUNT) != id)
         abort ();
@@ -132,8 +132,8 @@ worker_thread (void *arg)
   for (repeat = REPEAT_COUNT; repeat > 0; repeat--)
     {
       dbgprintf ("Worker %p doing value swapping\n", pthread_self_pointer ());
-      i = ((unsigned int) rand () >> 3) % KEYS_COUNT;
-      j = ((unsigned int) rand () >> 3) % KEYS_COUNT;
+      i = ((unsigned long) random () >> 3) % KEYS_COUNT;
+      j = ((unsigned long) random () >> 3) % KEYS_COUNT;
       if (i != j)
         {
           void *vi = pthread_getspecific (mykeys[i]);
@@ -423,7 +423,7 @@ test_tss_dtorcheck2 (void)
 #undef THREAD_COUNT
 
 
-/* --- Test thread-local storage with with races between init and destroy --- */
+/* --- Test thread-local storage with races between init and destroy --- */
 
 /* Number of simultaneous threads.  */
 #if defined __ANDROID__
@@ -462,7 +462,7 @@ racecheck_thread (void *arg)
 
   for (repeat = REPEAT_COUNT; repeat > 0; repeat--)
     {
-      i = ((unsigned int) rand () >> 3) % KEYS_COUNT;
+      i = ((unsigned long) random () >> 3) % KEYS_COUNT;
       dbgprintf ("Worker %p reallocating key %d\n", pthread_self_pointer (), i);
       ASSERT (pthread_key_delete (keys[i]) == 0);
       ASSERT (pthread_key_create (&keys[i], destructor_table[i]) == 0);
@@ -551,7 +551,7 @@ main ()
   test_tss_racecheck ();
   printf (" OK\n"); fflush (stdout);
 
-  return 0;
+  return test_exit_status;
 }
 
 #else

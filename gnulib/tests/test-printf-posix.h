@@ -1,9 +1,9 @@
-/* Test of POSIX compatible vsprintf() and sprintf() functions.
-   Copyright (C) 2007-2021 Free Software Foundation, Inc.
+/* Test of POSIX compatible v[z]printf() and [z]printf() functions.
+   Copyright (C) 2007-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -19,7 +19,7 @@
 #include "infinity.h"
 
 static void
-test_function (int (*my_printf) (const char *, ...))
+test_function (RETTYPE (*my_printf) (const char *, ...))
 {
   /* Here we don't test output that may be platform dependent.
      The bulk of the tests is done as part of the 'vasnprintf-posix' module.  */
@@ -148,6 +148,12 @@ test_function (int (*my_printf) (const char *, ...))
 
   /* Precision with rounding.  */
   my_printf ("%.2LF %d\n", 999.996L, 33, 44, 55);
+
+  /* Test the support of the %b format directive.  */
+
+  /* This test would fail on glibc 2.34, musl libc, macOS 14,
+     FreeBSD 13.2, NetBSD 10.0, OpenBSD 7.5, AIX 7.3, Solaris 11.4.  */
+  my_printf ("%b %d\n", 12345, 33, 44, 55);
 
   /* Test the support of the POSIX/XSI format strings with positions.  */
 

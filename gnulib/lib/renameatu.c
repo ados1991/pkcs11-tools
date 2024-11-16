@@ -1,9 +1,9 @@
 /* Rename a file relative to open directories.
-   Copyright (C) 2009-2021 Free Software Foundation, Inc.
+   Copyright (C) 2009-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -38,7 +38,6 @@ errno_fail (int e)
 
 #if HAVE_RENAMEAT
 
-# include <stdbool.h>
 # include <stdlib.h>
 # include <string.h>
 
@@ -71,11 +70,15 @@ static int
 renameat2ish (int fd1, char const *src, int fd2, char const *dst,
               unsigned int flags)
 {
+# ifdef RENAME_SWAP
+  if (flags & RENAME_EXCHANGE)
+    return renameatx_np (fd1, src, fd2, dst, RENAME_SWAP);
+# endif
 # ifdef RENAME_EXCL
   if (flags)
     {
       int r = renameatx_np (fd1, src, fd2, dst, RENAME_EXCL);
-      if (r == 0 || errno != ENOTSUP)
+      if (r == 0 || (errno != ENOTSUP && errno != ENOSYS))
         return r;
     }
 # endif
@@ -103,7 +106,7 @@ renameatu (int fd1, char const *src, int fd2, char const *dst,
   int ret_val = -1;
   int err = EINVAL;
 
-#ifdef HAVE_RENAMEAT2
+#if HAVE_WORKING_RENAMEAT2
   ret_val = renameat2 (fd1, src, fd2, dst, flags);
   err = errno;
 #elif defined SYS_renameat2
@@ -133,18 +136,23 @@ renameatu (int fd1, char const *src, int fd2, char const *dst,
       break;
 
     case RENAME_NOREPLACE:
-      /* This has a race between the call to lstatat and the calls to
-         renameat below.  This lstatat is needed even if RENAME_EXCL
+      /* This has a race between the call to fstatat and the calls to
+         renameat below.  This fstatat is needed even if RENAME_EXCL
          is defined, because RENAME_EXCL is buggy on macOS 11.2:
          renameatx_np (fd, "X", fd, "X", RENAME_EXCL) incorrectly
          succeeds when X exists.  */
-      if (lstatat (fd2, dst, &dst_st) == 0 || errno == EOVERFLOW)
+      if (fstatat (fd2, dst, &dst_st, AT_SYMLINK_NOFOLLOW) == 0
+          || errno == EOVERFLOW)
         return errno_fail (EEXIST);
       if (errno != ENOENT)
         return -1;
       dst_found_nonexistent = true;
       break;
 
+    case RENAME_EXCHANGE:
+#ifdef RENAME_SWAP
+      break;
+#endif
     default:
       return errno_fail (ENOTSUP);
     }
@@ -164,14 +172,14 @@ renameatu (int fd1, char const *src, int fd2, char const *dst,
      the source does not exist, or if the destination cannot be turned
      into a directory, give up now.  Otherwise, strip trailing slashes
      before calling rename.  */
-  if (lstatat (fd1, src, &src_st))
+  if (fstatat (fd1, src, &src_st, AT_SYMLINK_NOFOLLOW))
     return -1;
   if (dst_found_nonexistent)
     {
       if (!S_ISDIR (src_st.st_mode))
         return errno_fail (ENOENT);
     }
-  else if (lstatat (fd2, dst, &dst_st))
+  else if (fstatat (fd2, dst, &dst_st, AT_SYMLINK_NOFOLLOW))
     {
       if (errno != ENOENT || !S_ISDIR (src_st.st_mode))
         return -1;
@@ -196,7 +204,7 @@ renameatu (int fd1, char const *src, int fd2, char const *dst,
           goto out;
         }
       strip_trailing_slashes (src_temp);
-      if (lstatat (fd1, src_temp, &src_st))
+      if (fstatat (fd1, src_temp, &src_st, AT_SYMLINK_NOFOLLOW))
         {
           rename_errno = errno;
           goto out;
@@ -213,15 +221,16 @@ renameatu (int fd1, char const *src, int fd2, char const *dst,
           goto out;
         }
       strip_trailing_slashes (dst_temp);
-      if (lstatat (fd2, dst_temp, &dst_st))
+      char readlink_buf[1];
+      if (readlinkat (fd2, dst_temp, readlink_buf, sizeof readlink_buf) < 0)
         {
-          if (errno != ENOENT)
+          if (errno != ENOENT && errno != EINVAL)
             {
               rename_errno = errno;
               goto out;
             }
         }
-      else if (S_ISLNK (dst_st.st_mode))
+      else
         goto out;
     }
 # endif /* RENAME_TRAILING_SLASH_SOURCE_BUG */

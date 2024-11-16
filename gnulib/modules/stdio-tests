@@ -1,8 +1,12 @@
 Files:
 tests/test-stdio.c
+tests/macros.h
+m4/exponentd.m4
 
 Depends-on:
-verify
+assert-h
+signed-nan
+signed-snan
 stdio-c++-tests
 fgetc-tests
 fputc-tests
@@ -10,6 +14,7 @@ fread-tests
 fwrite-tests
 
 configure.ac:
+gl_DOUBLE_EXPONENT_LOCATION
 
 Makefile.am:
 TESTS += test-stdio

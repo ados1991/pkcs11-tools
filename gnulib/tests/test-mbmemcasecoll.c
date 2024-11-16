@@ -1,9 +1,9 @@
 /* Test of case-insensitive memory area comparison function.
-   Copyright (C) 2007-2021 Free Software Foundation, Inc.
+   Copyright (C) 2007-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -21,8 +21,9 @@
 #include "mbmemcasecoll.h"
 
 #include <locale.h>
-#include <stdbool.h>
 #include <string.h>
+#include <wchar.h>
+#include <wctype.h>
 
 #include "macros.h"
 
@@ -46,20 +47,20 @@ main (int argc, char *argv[])
   if (argc > 1)
     switch (argv[1][0])
       {
-      case '1':
+      case '2':
         /* Locale encoding is ISO-8859-1 or ISO-8859-15.  */
         test_iso_8859_1 (mbmemcasecoll_hard, false);
-        return 0;
-
-      case '2':
-        /* Locale encoding is UTF-8, locale is not Turkish.  */
-        test_utf_8 (mbmemcasecoll_hard, false);
-        return 0;
+        return test_exit_status;
 
       case '3':
+        /* Locale encoding is UTF-8, locale is not Turkish.  */
+        test_utf_8 (mbmemcasecoll_hard, false);
+        return test_exit_status;
+
+      case '4':
         /* Locale encoding is UTF-8, locale is Turkish.  */
         test_utf_8 (mbmemcasecoll_hard, true);
-        return 0;
+        return test_exit_status;
       }
 
   return 1;

@@ -1,9 +1,9 @@
 /* Test counting of trailing zeros.
-   Copyright (C) 2013-2021 Free Software Foundation, Inc.
+   Copyright (C) 2013-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -71,5 +71,5 @@ main (int argc, char *argv[])
   TEST_COUNT_TRAILING_ZEROS (count_trailing_zeros_ll, unsigned long long int,
                              ULLONG_BIT, ULLONG_MAX, 1ULL);
 
-  return 0;
+  return test_exit_status;
 }

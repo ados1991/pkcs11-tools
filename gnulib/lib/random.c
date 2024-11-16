@@ -1,8 +1,8 @@
-/* Copyright (C) 1995-2021 Free Software Foundation, Inc.
+/* Copyright (C) 1995-2024 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
-   published by the Free Software Foundation; either version 3 of the
+   published by the Free Software Foundation, either version 3 of the
    License, or (at your option) any later version.
 
    This file is distributed in the hope that it will be useful,
@@ -67,10 +67,10 @@
 #ifdef _LIBC
 # include <libc-lock.h>
 #else
-/* Allow memory races; that's random enough.  */
-# define __libc_lock_define_initialized(class, name)
-# define __libc_lock_lock(name) ((void) 0)
-# define __libc_lock_unlock(name) ((void) 0)
+# include "glthread/lock.h"
+# define __libc_lock_define_initialized gl_lock_define_initialized
+# define __libc_lock_lock gl_lock_lock
+# define __libc_lock_unlock gl_lock_unlock
 #endif
 
 /* An improved random number generation package.  In addition to the standard

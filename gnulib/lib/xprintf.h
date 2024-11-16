@@ -1,9 +1,9 @@
 /* printf wrappers that fail immediately for non-file-related errors
-   Copyright (C) 2007-2021 Free Software Foundation, Inc.
+   Copyright (C) 2007-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -17,8 +17,18 @@
 #ifndef _XPRINTF_H
 #define _XPRINTF_H
 
+/* This file uses _GL_ATTRIBUTE_FORMAT.  */
+#if !_GL_CONFIG_H_INCLUDED
+ #error "Please include config.h first."
+#endif
+
 #include <stdarg.h>
 #include <stdio.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 extern int xprintf (char const *restrict format, ...)
 #if GNULIB_VPRINTF_POSIX
@@ -52,5 +62,10 @@ extern int xvfprintf (FILE *restrict stream, char const *restrict format,
      _GL_ATTRIBUTE_FORMAT ((_GL_ATTRIBUTE_SPEC_PRINTF_SYSTEM, 2, 0))
 #endif
      ;
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

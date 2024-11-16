@@ -1,10 +1,10 @@
 /* Relocating wrapper program.
-   Copyright (C) 2003, 2005-2007, 2009-2021 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2005-2007, 2009-2024 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2003.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -22,6 +22,7 @@
        -> stat
           -> filename
           -> pathmax
+          -> stat-time
           -> verify
        -> areadlink
           -> careadlinkat
@@ -29,10 +30,10 @@
           -> readlink
              -> stat
        -> canonicalize-lgpl
+          -> c-bool
           -> libc-config
           -> errno
           -> fcntl-h
-          -> stdbool
           -> sys_stat
           -> unistd
           -> eloop-threshold
@@ -81,7 +82,6 @@
 #include "progname.h"
 #include "relocatable.h"
 #include "c-ctype.h"
-#include "verify.h"
 
 /* Use the system functions, not the gnulib overrides in this file.  */
 #undef fprintf
@@ -142,7 +142,7 @@ add_dotbin (const char *filename)
 /* List of directories that contain the libraries.  */
 static const char *libdirs[] = { LIBDIRS NULL };
 /* Verify that at least one directory is given.  */
-verify (sizeof (libdirs) / sizeof (libdirs[0]) > 1);
+static_assert (sizeof (libdirs) / sizeof (libdirs[0]) > 1);
 
 /* Relocate the list of directories that contain the libraries.  */
 static void

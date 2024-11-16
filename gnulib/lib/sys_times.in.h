@@ -1,5 +1,5 @@
 /* Provide a sys/times.h header file.
-   Copyright (C) 2008-2021 Free Software Foundation, Inc.
+   Copyright (C) 2008-2024 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -26,11 +26,18 @@
 # endif
 @PRAGMA_COLUMNS@
 
+/* The include_next requires a split double-inclusion guard.  */
 # if @HAVE_SYS_TIMES_H@
 #  @INCLUDE_NEXT@ @NEXT_SYS_TIMES_H@
 # endif
 
+# ifndef _@GUARD_PREFIX@_SYS_TIMES_H
 # define _@GUARD_PREFIX@_SYS_TIMES_H
+
+/* This file uses GNULIB_POSIXCHECK, HAVE_RAW_DECL_*.  */
+# if !_GL_CONFIG_H_INCLUDED
+#  error "Please include config.h first."
+# endif
 
 /* Get clock_t.
    But avoid namespace pollution on glibc systems.  */
@@ -77,4 +84,5 @@ _GL_WARN_ON_USE (times, "times is unportable - "
 }
 # endif
 
+# endif                         /* _@GUARD_PREFIX@_SYS_TIMES_H */
 #endif                          /* _@GUARD_PREFIX@_SYS_TIMES_H */

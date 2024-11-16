@@ -1,9 +1,9 @@
 /* Test the getentropy function.
-   Copyright 2020-2021 Free Software Foundation, Inc.
+   Copyright 2020-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -50,5 +50,5 @@ main (int argc, char *argv[])
     ASSERT (memcmp (buf1, buf2, sizeof (buf1)) != 0);
   }
 
-  return 0;
+  return test_exit_status;
 }

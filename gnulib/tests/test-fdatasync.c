@@ -1,9 +1,9 @@
 /* Test of fdatasync() function.
-   Copyright (C) 2008-2021 Free Software Foundation, Inc.
+   Copyright (C) 2008-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -56,6 +56,13 @@ main (void)
     ASSERT (fdatasync (99) == -1);
     ASSERT (errno == EBADF);
   }
+#ifdef AT_FDCWD
+  {
+    errno = 0;
+    ASSERT (fdatasync (AT_FDCWD) == -1);
+    ASSERT (errno == EBADF);
+  }
+#endif
 
   fd = open (file, O_WRONLY|O_CREAT|O_TRUNC, 0644);
   ASSERT (0 <= fd);
@@ -77,5 +84,5 @@ main (void)
 
   ASSERT (unlink (file) == 0);
 
-  return 0;
+  return test_exit_status;
 }

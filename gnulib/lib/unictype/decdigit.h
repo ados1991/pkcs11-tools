@@ -1,21 +1,21 @@
 /* DO NOT EDIT! GENERATED AUTOMATICALLY! */
 /* Decimal digit values of Unicode characters.  */
-/* Generated automatically by gen-uni-tables.c for Unicode 9.0.0.  */
+/* Generated automatically by gen-uni-tables.c for Unicode 16.0.0.  */
 
-/* Copyright (C) 2000-2021 Free Software Foundation, Inc.
+/* Copyright (C) 2000-2024 Free Software Foundation, Inc.
 
-   This program is free software.
+   This file is free software.
    It is dual-licensed under "the GNU LGPLv3+ or the GNU GPLv2+".
    You can redistribute it and/or modify it under either
      - the terms of the GNU Lesser General Public License as published
-       by the Free Software Foundation; either version 3, or (at your
+       by the Free Software Foundation, either version 3, or (at your
        option) any later version, or
      - the terms of the GNU General Public License as published by the
        Free Software Foundation; either version 2, or (at your option)
        any later version, or
      - the same dual license "the GNU LGPLv3+ or the GNU GPLv2+".
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
    Lesser General Public License and the GNU General Public License
@@ -23,7 +23,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License and of the GNU General Public License along with this
-   program; if not, see <https://www.gnu.org/licenses/>.  */
+   program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #define decdigit_header_0 16
 #define decdigit_header_1 2
@@ -35,7 +35,7 @@ struct
   {
     int level1[2];
     short level2[2 << 9];
-    unsigned char level3[15 << 6];
+    unsigned char level3[18 << 6];
   }
 u_decdigit =
 {
@@ -108,13 +108,11 @@ u_decdigit =
        -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
        -1,   768,    -1,    -1,    -1,    -1,    -1,    -1,
        -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
-       -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
-      512,   256,  1664,   640,    -1,   256,    -1,    -1,
-      640,   640,    -1,    -1,   640,   384,     0,    -1,
-       -1,   128,    -1,    -1,    -1,    -1,    -1,    -1,
-      640,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
-       -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
-       -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
+       -1,    -1,  1664,    -1,    -1,    -1,    -1,    -1,
+      512,   256,  1792,   640,    -1,   256,    -1,    -1,
+      640,   640,    -1,    -1,   640,  1920,     0,    -1,
+       -1,   128,   640,    -1,    -1,    -1,    -1,   256,
+      640,    -1,   640,   768,    -1,    -1,   640,    -1,
        -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
        -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
        -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
@@ -131,10 +129,10 @@ u_decdigit =
        -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
        -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
        -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
-       -1,    -1,    -1,    -1,   128,    -1,   640,    -1,
+       -1,    -1,     0,    -1,    -1,    -1,    -1,    -1,
        -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
-       -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
-       -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
+       -1,    -1,    -1,    -1,   128,   384,   640,    -1,
+       -1,    -1,   256,    -1,    -1,    -1,    -1,    -1,
        -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
        -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
        -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
@@ -158,16 +156,18 @@ u_decdigit =
        -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
        -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
        -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
-       -1,    -1,    -1,    -1,    -1,    -1,    -1,  1792,
+       -1,   256,    -1,    -1,    -1,    -1,    -1,    -1,
+       -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
+       -1,    -1,    -1,    -1,    -1,    -1,    -1,  2048,
        -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
        -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
-       -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
-       -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
+       -1,    -1,   384,    -1,    -1,   256,    -1,    -1,
+       -1,   256,    -1,  2176,    -1,    -1,    -1,    -1,
        -1,    -1,   640,    -1,    -1,    -1,    -1,    -1,
        -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
        -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
        -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
-       -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
+       -1,    -1,    -1,    -1,    -1,    -1,    -1,   256,
        -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1
   },
   {
@@ -278,6 +278,14 @@ u_decdigit =
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x21, 0x43, 0x65, 0x87, 0xa9, 0x00, 0x00, 0x00,
+    0x21, 0x43, 0x65, 0x87, 0xa9, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x21, 0x43, 0x65, 0x87, 0xa9,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -287,9 +295,25 @@ u_decdigit =
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x21, 0x43, 0x65, 0x87, 0xa9, 0x00, 0x00, 0x00,
+    0x21, 0x43, 0x65, 0x87, 0xa9, 0x21, 0x43, 0x65,
+    0x87, 0xa9, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x21,
     0x43, 0x65, 0x87, 0xa9, 0x21, 0x43, 0x65, 0x87,
     0xa9, 0x21, 0x43, 0x65, 0x87, 0xa9, 0x21, 0x43,
-    0x65, 0x87, 0xa9, 0x21, 0x43, 0x65, 0x87, 0xa9
+    0x65, 0x87, 0xa9, 0x21, 0x43, 0x65, 0x87, 0xa9,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x10, 0x32, 0x54, 0x76, 0x98, 0x0a, 0x00, 0x00
   }
 };

@@ -1,8 +1,10 @@
-# monetary_h.m4 serial 8
-dnl Copyright (C) 2017-2021 Free Software Foundation, Inc.
+# monetary_h.m4
+# serial 9
+dnl Copyright (C) 2017-2024 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 AC_DEFUN_ONCE([gl_MONETARY_H],
 [
@@ -15,7 +17,7 @@ AC_DEFUN_ONCE([gl_MONETARY_H],
   dnl - C++ GNULIB_NAMESPACE support may be requested, or
   dnl - the system already has a <monetary.h>.
   if m4_ifdef([gl_POSIXCHECK], [true], [m4_ifdef([gl_ANSI_CXX], [test "$CXX" != no], [false]) || test $ac_cv_header_monetary_h = yes]); then
-    MONETARY_H='monetary.h'
+    GL_GENERATE_MONETARY_H=true
 
     gl_CHECK_NEXT_HEADERS([monetary.h])
     if test $ac_cv_header_monetary_h = yes; then
@@ -41,10 +43,8 @@ AC_DEFUN_ONCE([gl_MONETARY_H],
 
     AC_REQUIRE([AC_C_RESTRICT])
   else
-    MONETARY_H=''
+    GL_GENERATE_MONETARY_H=false
   fi
-  AC_SUBST([MONETARY_H])
-  AM_CONDITIONAL([GL_GENERATE_MONETARY_H], [test -n "$MONETARY_H"])
 ])
 
 # gl_MONETARY_MODULE_INDICATOR([modulename])

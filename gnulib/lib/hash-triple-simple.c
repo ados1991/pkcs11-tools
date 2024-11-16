@@ -1,9 +1,9 @@
 /* Hash functions for file-related triples: name, device, inode.
-   Copyright (C) 2007, 2009-2021 Free Software Foundation, Inc.
+   Copyright (C) 2007, 2009-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -46,7 +46,7 @@ triple_compare_ino_str (void const *x, void const *y)
 {
   struct F_triple const *a = x;
   struct F_triple const *b = y;
-  return (SAME_INODE (*a, *b) && STREQ (a->name, b->name)) ? true : false;
+  return PSAME_INODE (a, b) && STREQ (a->name, b->name);
 }
 
 /* Free an F_triple.  */

@@ -1,10 +1,10 @@
 /* Terminal control for outputting styled text to a terminal.
-   Copyright (C) 2006-2008, 2017, 2019-2021 Free Software Foundation, Inc.
+   Copyright (C) 2006-2008, 2017, 2019-2024 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2019.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -25,7 +25,6 @@
 
 #include <errno.h>
 #include <signal.h>
-#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -226,7 +225,10 @@ log_signal_handler_called (int sig)
 
 #else
 
-# define log_signal_handler_called(sig)
+static void
+log_signal_handler_called (_GL_UNUSED int sig)
+{
+}
 
 #endif
 
@@ -722,11 +724,11 @@ stopping_signal_handler (int sig)
 /* The signal handler for SIGCONT.
    It is reentrant.  */
 static _GL_ASYNC_SAFE void
-continuing_signal_handler (int sig)
+continuing_signal_handler (int sigcont)
 {
   int saved_errno = errno;
 
-  log_signal_handler_called (sig);
+  log_signal_handler_called (sigcont);
   update_pgrp_status ();
   /* Only do something while some output was interrupted.  */
   if (active_controller != NULL
@@ -971,7 +973,7 @@ activate_term_style_controller (const struct term_style_controller *controller,
       if (fd == STDERR_FILENO
           || (fstat (fd, &statbuf1) >= 0
               && fstat (STDERR_FILENO, &statbuf2) >= 0
-              && SAME_INODE (statbuf1, statbuf2)))
+              && psame_inode (&statbuf1, &statbuf2)))
         control_data->same_as_stderr = true;
       else
         control_data->same_as_stderr = false;

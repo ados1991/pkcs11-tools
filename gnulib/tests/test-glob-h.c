@@ -1,9 +1,9 @@
 /* Test of <glob.h> substitute.
-   Copyright (C) 2009-2021 Free Software Foundation, Inc.
+   Copyright (C) 2009-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -19,8 +19,6 @@
 #include <config.h>
 
 #include <glob.h>
-
-#include "macros.h"
 
 /* Check that size_t is defined.  */
 size_t a;
@@ -43,6 +41,8 @@ int ret[] =
     GLOB_NOSPACE
   };
 
+#include "macros.h"
+
 int
 main ()
 {
@@ -53,5 +53,5 @@ main ()
   ASSERT (sizeof (g.gl_pathv));
   ASSERT (sizeof (g.gl_offs));
 
-  return 0;
+  return test_exit_status;
 }

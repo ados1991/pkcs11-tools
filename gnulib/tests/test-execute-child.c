@@ -1,9 +1,9 @@
 /* Child program invoked by test-execute-main.
-   Copyright (C) 2009-2021 Free Software Foundation, Inc.
+   Copyright (C) 2009-2024 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3, or (at your option)
+   the Free Software Foundation, either version 3, or (at your option)
    any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -41,7 +41,6 @@ is_device (int fd)
 /* Now include the other header files.  */
 #include <fcntl.h>
 #include <signal.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -57,6 +56,7 @@ is_device (int fd)
 #endif
 
 /* In this file, we use only system functions, no overrides from gnulib.  */
+#undef abort
 #undef atoi
 #undef close
 #undef fcntl
@@ -200,14 +200,14 @@ main (int argc, char *argv[])
          including the file position.  */
       {
         char buf[6];
-        int n = read (10, buf, sizeof (buf));
+        int n = read (15, buf, sizeof (buf));
         return !(n == 4 && memcmp (buf, "obar", 4) == 0);
       }
     case 18:
       /* Check that file descriptors >= 3, open for writing, can be inherited,
          including the file position.  */
       {
-        int n = write (10, "bar", 3);
+        int n = write (15, "bar", 3);
         return !(n == 3);
       }
     case 19:
@@ -218,9 +218,9 @@ main (int argc, char *argv[])
          isatty() property, part 2 (character devices).  */
       {
         #if defined _WIN32 && ! defined __CYGWIN__
-        return 4 + 2 * (_isatty (10) != 0) + (_isatty (11) != 0);
+        return 4 + 2 * (_isatty (15) != 0) + (_isatty (16) != 0);
         #else
-        return 4 + 2 * (isatty (10) != 0) + (isatty (11) != 0);
+        return 4 + 2 * (isatty (15) != 0) + (isatty (16) != 0);
         #endif
       }
     case 21:

@@ -1,6 +1,6 @@
 /* safe-alloc.h: safer memory allocation
 
-   Copyright (C) 2009-2021 Free Software Foundation, Inc.
+   Copyright (C) 2009-2024 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -20,24 +20,25 @@
 #ifndef SAFE_ALLOC_H_
 #define SAFE_ALLOC_H_
 
+/* This file uses _GL_INLINE_HEADER_BEGIN, _GL_INLINE,
+   _GL_ATTRIBUTE_NODISCARD.  */
+#if !_GL_CONFIG_H_INCLUDED
+ #error "Please include config.h first."
+#endif
+
 #include <stdlib.h>
 
-#ifndef _GL_INLINE_HEADER_BEGIN
-   #error "Please include config.h first."
-#endif
 _GL_INLINE_HEADER_BEGIN
 #ifndef SAFE_ALLOC_INLINE
 # define SAFE_ALLOC_INLINE _GL_INLINE
 #endif
 
-/* Don't call these directly - use the macros below.  */
-SAFE_ALLOC_INLINE void *
-safe_alloc_realloc_n (void *ptr, size_t count, size_t size)
-{
-  if (count == 0 || size == 0)
-    count = size = 1;
-  return reallocarray (ptr, count, size);
-}
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+/* Don't call this directly - use the macros below.  */
 _GL_ATTRIBUTE_NODISCARD SAFE_ALLOC_INLINE int
 safe_alloc_check (void *ptr)
 {
@@ -83,7 +84,7 @@ safe_alloc_check (void *ptr)
  * Return -1 on failure to allocate, zero on success.
  */
 #define ALLOC_N_UNINITIALIZED(ptr, count) \
-  safe_alloc_check ((ptr) = safe_alloc_realloc_n (NULL, count, sizeof *(ptr)))
+  safe_alloc_check ((ptr) = reallocarray (NULL, count, sizeof *(ptr)))
 
 /**
  * REALLOC_N:
@@ -97,7 +98,7 @@ safe_alloc_check (void *ptr)
  * Return -1 on failure to reallocate, zero on success.
  */
 #define REALLOC_N(ptr, count) \
-  safe_alloc_check ((ptr) = safe_alloc_realloc_n (ptr, count, sizeof *(ptr)))
+  safe_alloc_check ((ptr) = reallocarray (ptr, count, sizeof *(ptr)))
 
 /**
  * FREE:
@@ -107,6 +108,11 @@ safe_alloc_check (void *ptr)
  * to NULL.
  */
 #define FREE(ptr) ((void) (free (ptr), (ptr) = NULL))
+
+
+#ifdef __cplusplus
+}
+#endif
 
 _GL_INLINE_HEADER_END
 

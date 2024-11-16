@@ -1,6 +1,10 @@
 Description:
 A simple self-profiling module based on timers.
 
+Usable-in-testdir:
+# This module lacks the required file timevar.def.
+no
+
 Files:
 lib/timevar.h
 lib/timevar.c

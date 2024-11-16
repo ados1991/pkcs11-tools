@@ -1,9 +1,10 @@
 @node sys/time.h
 @section @file{sys/time.h}
 
-POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/sys_time.h.html}
+POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9799919799/basedefs/sys_time.h.html}
 
 Gnulib module: sys_time
+@mindex sys_time
 
 Portability problems fixed by Gnulib:
 @itemize
@@ -21,6 +22,9 @@ mingw64 in 32-bit mode when @code{__MINGW_USE_VC2005_COMPAT} is defined,
 MSVC 14 in 64-bit mode,
 MSVC 14 in 32-bit mode when @code{_USE_32BIT_TIME_T} is not defined.
 @end itemize
+
+@xref{Avoiding the year 2038 problem}, for portability issues with
+@code{time_t} and the @code{time_t} component of @code{struct timeval}.
 
 Portability problems not fixed by Gnulib:
 @itemize

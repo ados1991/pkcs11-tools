@@ -1,9 +1,9 @@
 /* Test of strncat() function.
-   Copyright (C) 2010-2021 Free Software Foundation, Inc.
+   Copyright (C) 2010-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -58,5 +58,21 @@ main ()
     check (input, SIZEOF (input));
   }
 
-  return 0;
+  int volatile value;
+
+  /* Test zero-length operations on NULL pointers, allowed by
+     <https://www.open-std.org/jtc1/sc22/wg14/www/docs/n3322.pdf>.  */
+
+#if 0 /* I think this is invalid, per ISO C 23 § 7.26.3.2.  */
+  value = (strncat (NULL, "x", 0) == NULL);
+  ASSERT (value);
+#endif
+
+  {
+    char y[2] = { 'x', '\0' };
+    value = (strncat (y, NULL, 0) == y);
+    ASSERT (value);
+  }
+
+  return test_exit_status;
 }

@@ -1,131 +1,103 @@
-#!/usr/bin/python
-# encoding: UTF-8
+# Copyright (C) 2002-2024 Free Software Foundation, Inc.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+from __future__ import annotations
 
 #===============================================================================
 # Define global imports
 #===============================================================================
 import os
-import re
-import sys
-import codecs
-import hashlib
-import subprocess as sp
-from . import constants
-from .GLError import GLError
+from .constants import joinpath
 from .GLConfig import GLConfig
-from .GLFileSystem import GLFileSystem
-
-
-#===============================================================================
-# Define module information
-#===============================================================================
-__author__ = constants.__author__
-__license__ = constants.__license__
-__copyright__ = constants.__copyright__
-
-
-#===============================================================================
-# Define global constants
-#===============================================================================
-PYTHON3 = constants.PYTHON3
-NoneType = type(None)
-APP = constants.APP
-DIRS = constants.DIRS
-ENCS = constants.ENCS
-UTILS = constants.UTILS
-MODES = constants.MODES
-TESTS = constants.TESTS
-compiler = constants.compiler
-joinpath = constants.joinpath
-cleaner = constants.cleaner
-string = constants.string
-isabs = os.path.isabs
-isdir = os.path.isdir
-isfile = os.path.isfile
-normpath = os.path.normpath
-relpath = os.path.relpath
-filter_filelist = constants.filter_filelist
-
 
 #===============================================================================
 # Define GLMakefileTable class
 #===============================================================================
-class GLMakefileTable(object):
+class GLMakefileTable:
     '''This class is used to edit Makefile and store edits as table.
-    When user creates  Makefile, he may need to use this class.'''
+    When user creates Makefile.am, he may need to use this class.
+    The internal representation consists of a list of edits.
+    Each edit is a dictionary with keys 'dir', 'var', 'val', 'dotfirst'.
+    An edit may be removed; this is done by removing its 'var' key but
+    keeping it in the list. Removed edits must be ignored.'''
 
-    def __init__(self, config):
-        '''GLMakefileTable.__init__(config) -> GLMakefileTable
+    config: GLConfig
+    table: list[dict[str, str | bool]]
 
-        Create GLMakefileTable instance.'''
+    def __init__(self, config: GLConfig) -> None:
+        '''Create GLMakefileTable instance.'''
         if type(config) is not GLConfig:
-            raise(TypeError('config must be a GLConfig, not %s' %
-                            type(config).__name__))
+            raise TypeError('config must be a GLConfig, not %s'
+                            % type(config).__name__)
         self.config = config
-        self.table = list()
+        self.table = []
 
-    def __getitem__(self, y):
+    def __getitem__(self, y: int) -> dict[str, str | bool]:
         '''x.__getitem__(y) = x[y]'''
         if type(y) is not int:
-            raise(TypeError('indices must be integers, not %s' %
-                            type(y).__name__))
+            raise TypeError('indices must be integers, not %s'
+                            % type(y).__name__)
         result = self.table[y]
-        return(dict(result))
+        # Do *not* clone the result here. We want GLEmiter to be able to make
+        # side effects on the result.
+        return result
 
-    def editor(self, dir, var, val):
-        '''GLMakefileTable.editor(dir, var, val)
+    def editor(self, dir: str, var: str, val: str, dotfirst: bool = False) -> None:
+        '''This method is used to remember that ${dir}Makefile.am needs to be edited
+        to that ${var} mentions ${val}.
+        If ${dotfirst} is non-empty, this mention needs to be present after '.'.
+        This is a special hack for the SUBDIRS variable, cf.
+        <https://www.gnu.org/software/automake/manual/html_node/Subdirectories.html>.'''
+        if type(dir) is not str:
+            raise TypeError('dir must be a string, not %s' % (type(dir).__name__))
+        if type(var) is not str:
+            raise TypeError('var must be a string, not %s' % (type(var).__name__))
+        if type(val) is not str:
+            raise TypeError('val must be a string, not %s' % (type(val).__name__))
+        if type(dotfirst) is not bool:
+            raise TypeError('dotfirst must be a bool, not %s' % (type(dotfirst).__name__))
+        dictionary = {'dir': dir, 'var': var, 'val': val, 'dotfirst': dotfirst}
+        self.table.append(dictionary)
 
-        This method is used to remember that ${dir}Makefile.am needs to be edited
-        to that ${var} mentions ${val}.'''
-        if type(dir) is bytes or type(dir) is string:
-            if type(dir) is bytes:
-                dir = dir.decode(ENCS['default'])
-        else:  # if dir has not bytes or string type
-            raise(TypeError(
-                'dir must be a string, not %s' % (type(dir).__name__)))
-        if type(var) is bytes or type(var) is string:
-            if type(var) is bytes:
-                var = var.decode(ENCS['default'])
-        else:  # if var has not bytes or string type
-            raise(TypeError(
-                'var must be a string, not %s' % (type(var).__name__)))
-        if type(val) is bytes or type(val) is string:
-            if type(val) is bytes:
-                val = val.decode(ENCS['default'])
-        else:  # if val has not bytes or string type
-            raise(TypeError(
-                'val must be a string, not %s' % (type(val).__name__)))
-        dictionary = {'dir': dir, 'var': var, 'val': val}
-        self.table += [dictionary]
-
-    def parent(self):
-        '''GLMakefileTable.parent()
-
-        Add a special row to Makefile.am table with the first parent directory
+    def parent(self, gentests: bool, source_makefile_am: str, tests_makefile_am: str) -> None:
+        '''Add a special row to Makefile.am table with the first parent directory
         which contains or will contain Makefile.am file.
-        GLConfig: sourcebase, m4base, testsbase, testflags, makefile.'''
+        GLConfig: sourcebase, m4base, testsbase, incl_test_categories,
+        excl_test_categories, makefile_name.
+        gentests is a bool that is True if any files are to be placed in $testsbase.
+        source_makefile_am is the name of the source Makefile.am.
+        tests_makefile_am is the name of the tests Makefile.am.'''
+        if type(gentests) is not bool:
+            raise TypeError('gentests must be a bool, not %s' % (type(gentests).__name__))
+        if type(source_makefile_am) is not str:
+            raise TypeError('source_makefile_am must be a str, not %s' % (type(source_makefile_am).__name__))
+        if type(tests_makefile_am) is not str:
+            raise TypeError('tests_makefile_am must be a str, not %s' % (type(tests_makefile_am).__name__))
         m4base = self.config['m4base']
         sourcebase = self.config['sourcebase']
         testsbase = self.config['testsbase']
-        makefile = self.config['makefile']
-        inctests = self.config.checkTestFlag(TESTS['tests'])
-        dir1 = string('%s%s' % (m4base, os.path.sep))
-        mfd = string('Makefile.am')
-        if not makefile:
-            mfx = string('Makefile.am')
-        else:  # if makefile
-            mfx = makefile
-        dir2 = string()
-        while dir1 and \
-            (joinpath(self.config['destdir'], dir1, mfd) or
-             joinpath(dir1, mfd) == joinpath(sourcebase, mfx) or
-             (inctests and joinpath(dir1, mfd) == joinpath(testsbase, mfx))):
+        dir1 = '%s%s' % (m4base, os.path.sep)
+        dir2 = ''
+        while (dir1
+               and not (os.path.isfile(joinpath(self.config['destdir'], dir1, 'Makefile.am'))
+                        or joinpath(dir1, 'Makefile.am') == joinpath(sourcebase, source_makefile_am)
+                        or (gentests and joinpath(dir1, 'Makefile.am') == joinpath(testsbase, tests_makefile_am)))):
             dir2 = joinpath(os.path.basename(dir1), dir2)
             dir1 = os.path.dirname(dir1)
         self.editor(dir1, 'EXTRA_DIST', joinpath(dir2, 'gnulib-cache.m4'))
 
-    def count(self):
-        '''GLMakefileTable.count() -> int
-
-        Count number of edits which were applied.'''
-        return(len(self.table))
+    def count(self) -> int:
+        '''Count number of edits which are stored, including the removed ones.'''
+        return len(self.table)

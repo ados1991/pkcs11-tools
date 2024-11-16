@@ -1,10 +1,10 @@
 /* Test of list data type implementation as a C++ class.
-   Copyright (C) 2020-2021 Free Software Foundation, Inc.
+   Copyright (C) 2020-2024 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2020.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -75,5 +75,5 @@ main (int argc, char *argv[])
   list2.free ();
   list1.free ();
 
-  return 0;
+  return test_exit_status;
 }

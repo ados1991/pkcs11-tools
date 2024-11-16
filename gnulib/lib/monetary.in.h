@@ -1,5 +1,5 @@
 /* Wrapper around <monetary.h>.
-   Copyright (C) 2017-2021 Free Software Foundation, Inc.
+   Copyright (C) 2017-2024 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -28,6 +28,11 @@
 
 #ifndef _@GUARD_PREFIX@_MONETARY_H
 #define _@GUARD_PREFIX@_MONETARY_H
+
+/* This file uses _GL_ATTRIBUTE_FORMAT, GNULIB_POSIXCHECK, HAVE_RAW_DECL_*.  */
+#if !_GL_CONFIG_H_INCLUDED
+ #error "Please include config.h first."
+#endif
 
 #if @GNULIB_STRFMON_L@
 # if @HAVE_XLOCALE_H@
@@ -83,7 +88,7 @@ extern "C" {
 #  endif
 _GL_FUNCDECL_RPL (strfmon_l, ssize_t,
                   (char *restrict s, size_t maxsize, locale_t locale,
-                   const char *restrict format, ...)
+                   const char *restrict format, ...),
                   _GL_ATTRIBUTE_FORMAT_STRFMON (4, 5)
                   _GL_ARG_NONNULL ((4)));
 _GL_CXXALIAS_RPL (strfmon_l, ssize_t,

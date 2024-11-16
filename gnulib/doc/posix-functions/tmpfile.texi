@@ -1,10 +1,11 @@
 @node tmpfile
-@section @code{tmpfile}
+@subsection @code{tmpfile}
 @findex tmpfile
 
-POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9699919799/functions/tmpfile.html}
+POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9799919799/functions/tmpfile.html}
 
 Gnulib module: tmpfile
+@mindex tmpfile
 
 Portability problems fixed by Gnulib:
 @itemize
@@ -16,7 +17,7 @@ This function often fails for trivial reasons on some platforms:
 mingw, MSVC 14.
 @item
 On platforms where @code{off_t} is a 32-bit type, @code{tmpfile} may not work
-correctly to create files larger than 2 GB@.  (Cf. @code{AC_SYS_LARGEFILE}.)
+correctly to create files 2 GiB and larger.  @xref{Large File Support}.
 @end itemize
 
 Portability problems not fixed by Gnulib:

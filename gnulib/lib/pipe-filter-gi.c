@@ -1,11 +1,11 @@
 /* Filtering of data through a subprocess.
-   Copyright (C) 2001-2003, 2008-2021 Free Software Foundation, Inc.
+   Copyright (C) 2001-2003, 2008-2024 Free Software Foundation, Inc.
    Written by Paolo Bonzini <bonzini@gnu.org>, 2009,
    and Bruno Haible <bruno@clisp.org>, 2009.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -22,7 +22,6 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -34,7 +33,7 @@
 # include <sys/select.h>
 #endif
 
-#include "error.h"
+#include <error.h>
 #include "spawn-pipe.h"
 #include "wait-process.h"
 #include "xalloc.h"
@@ -497,7 +496,7 @@ pipe_filter_gi_create (const char *progname,
     (struct pipe_filter_gi *) xmalloc (sizeof (struct pipe_filter_gi));
 
   /* Open a bidirectional pipe to a subprocess.  */
-  filter->child = create_pipe_bidi (progname, prog_path, prog_argv,
+  filter->child = create_pipe_bidi (progname, prog_path, prog_argv, NULL,
                                     NULL, null_stderr, true, exit_on_error,
                                     filter->fd);
   filter->progname = progname;

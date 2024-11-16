@@ -1,8 +1,10 @@
-# malloc-align.m4 serial 1
-dnl Copyright (C) 2020-2021 Free Software Foundation, Inc.
+# malloc-align.m4
+# serial 3
+dnl Copyright (C) 2020-2024 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 dnl Defines a C macro MALLOC_ALIGNMENT, whose value is a numeric constant,
 dnl a power of 2, with the property that
@@ -71,7 +73,7 @@ AC_DEFUN([gl_MALLOC_ALIGNMENT],
               bits |= (uintptr_t) malloc (17027);
               bits |= (uintptr_t) malloc (81231);
               bits |= (uintptr_t) malloc (81231);
-              fprintf (fp, "%u\n", (unsigned int) (((bits ^ (bits - 1)) + 1) >> 1));
+              fprintf (fp, "%u", (unsigned int) (((bits ^ (bits - 1)) + 1) >> 1));
             }
             if (fclose (fp) != 0)
               return 2;
@@ -84,7 +86,7 @@ AC_DEFUN([gl_MALLOC_ALIGNMENT],
         dnl a smaller value (e.g. 4 instead of 8 or 16).
         gl_cv_malloc_alignment="unknown"
         case "$host_os" in
-          linux* | mingw*)
+          linux* | mingw* | windows*)
             dnl On Linux:
             dnl - It's 8 on most 32-bit platforms, except 16 on x86_64-x32 and
             dnl   (with newer versions of glibc) on i386 and powerpc.  8 is a

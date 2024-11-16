@@ -1,10 +1,10 @@
 /* backupfile.c -- make Emacs style backup file names
 
-   Copyright (C) 1990-2006, 2009-2021 Free Software Foundation, Inc.
+   Copyright (C) 1990-2006, 2009-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -25,7 +25,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <stdbool.h>
+#include <stdckdint.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,7 +34,6 @@
 #include "attribute.h"
 #include "basename-lgpl.h"
 #include "ialloc.h"
-#include "intprops.h"
 #include "opendirat.h"
 #include "renameatu.h"
 
@@ -272,7 +271,7 @@ numbered_backup (int dir_fd, char **buffer, idx_t buffer_size, idx_t filelen,
       if (buffer_size < new_buffer_size)
         {
           idx_t grown;
-          if (! INT_ADD_WRAPV (new_buffer_size, new_buffer_size >> 1, &grown))
+          if (! ckd_add (&grown, new_buffer_size, new_buffer_size >> 1))
             new_buffer_size = grown;
           char *new_buf = irealloc (buf, new_buffer_size);
           if (!new_buf)
@@ -371,13 +370,10 @@ backupfile_internal (int dir_fd, char const *file,
       if (! rename)
         break;
 
-      if (sdir < 0)
-        {
-          sdir = AT_FDCWD;
-          base_offset = 0;
-        }
+      dir_fd = sdir < 0 ? dir_fd : sdir;
+      idx_t offset = sdir < 0 ? 0 : base_offset;
       unsigned flags = backup_type == simple_backups ? 0 : RENAME_NOREPLACE;
-      if (renameatu (AT_FDCWD, file, sdir, s + base_offset, flags) == 0)
+      if (renameatu (dir_fd, file + offset, dir_fd, s + offset, flags) == 0)
         break;
       int e = errno;
       if (! (e == EEXIST && extended))

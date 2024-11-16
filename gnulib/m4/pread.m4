@@ -1,8 +1,10 @@
-# pread.m4 serial 6
-dnl Copyright (C) 2009-2021 Free Software Foundation, Inc.
+# pread.m4
+# serial 9
+dnl Copyright (C) 2009-2024 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 AC_DEFUN([gl_FUNC_PREAD],
 [
@@ -12,7 +14,7 @@ AC_DEFUN([gl_FUNC_PREAD],
   dnl Persuade glibc <unistd.h> to declare pread().
   AC_REQUIRE([AC_USE_SYSTEM_EXTENSIONS])
 
-  AC_CHECK_FUNCS_ONCE([pread])
+  gl_CHECK_FUNCS_ANDROID([pread], [[#include <unistd.h>]])
   if test $ac_cv_func_pread = yes; then
     dnl On HP-UX 11.11 with _FILE_OFFSET_BITS=64, pread() on a file returns 0
     dnl instead of a positive value.
@@ -29,7 +31,7 @@ changequote(,)dnl
           *)     gl_cv_func_pread_works="guessing yes" ;;
         esac
 changequote([,])dnl
-        gl_save_CPPFLAGS="$CPPFLAGS"
+        gl_saved_CPPFLAGS="$CPPFLAGS"
         CPPFLAGS="$CPPFLAGS -D_FILE_OFFSET_BITS=64"
         AC_RUN_IFELSE(
           [AC_LANG_PROGRAM([[
@@ -73,7 +75,7 @@ changequote([,])dnl
           [gl_cv_func_pread_works=yes],
           [gl_cv_func_pread_works=no],
           [:])
-        CPPFLAGS="$gl_save_CPPFLAGS"
+        CPPFLAGS="$gl_saved_CPPFLAGS"
       ])
     case "$gl_cv_func_pread_works" in
       *yes) ;;
@@ -81,5 +83,8 @@ changequote([,])dnl
     esac
   else
     HAVE_PREAD=0
+    case "$gl_cv_onwards_func_pread" in
+      future*) REPLACE_PREAD=1 ;;
+    esac
   fi
 ])

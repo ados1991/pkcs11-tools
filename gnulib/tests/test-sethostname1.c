@@ -1,10 +1,10 @@
 /*
- * Copyright (C) 2011-2021 Free Software Foundation, Inc.
+ * Copyright (C) 2011-2024 Free Software Foundation, Inc.
  * Written by Ben Walton.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -20,7 +20,9 @@
 #include <unistd.h>
 
 #include "signature.h"
+#if !((defined __APPLE__ && defined __MACH__) || defined __FreeBSD__ || defined __sgi || defined __sun)
 SIGNATURE_CHECK (sethostname, int, (const char *, size_t));
+#endif
 
 int do_dangerous_things;
 

@@ -1,9 +1,9 @@
 /* Dropping uid/gid privileges of the current process permanently.
-   Copyright (C) 2009-2021 Free Software Foundation, Inc.
+   Copyright (C) 2009-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -26,10 +26,10 @@ int
 idpriv_drop (void)
 {
 #if HAVE_GETUID
-  int uid = getuid ();
+  uid_t uid = getuid ();
 #endif
 #if HAVE_GETGID
-  int gid = getgid ();
+  gid_t gid = getgid ();
 #endif
 
   /* Drop the gid privilege first, because in some cases the gid privilege

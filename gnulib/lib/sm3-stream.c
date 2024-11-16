@@ -5,7 +5,7 @@
    SM3 cryptographic hash algorithm.
    <http://www.sca.gov.cn/sca/xwdt/2010-12/17/content_1002389.shtml>
 
-   Copyright (C) 2017-2021 Free Software Foundation, Inc.
+   Copyright (C) 2017-2024 Free Software Foundation, Inc.
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as
@@ -114,10 +114,3 @@ sm3_stream (FILE *stream, void *resblock)
   free (buffer);
   return 0;
 }
-
-/*
- * Hey Emacs!
- * Local Variables:
- * coding: utf-8
- * End:
- */

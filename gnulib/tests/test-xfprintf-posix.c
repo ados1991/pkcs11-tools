@@ -1,9 +1,9 @@
 /* Test of error-checking xfprintf() function with POSIX compatible formatting.
-   Copyright (C) 2007-2021 Free Software Foundation, Inc.
+   Copyright (C) 2007-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -20,18 +20,18 @@
 
 #include "xprintf.h"
 
-#include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 
 #include "macros.h"
 
+#define RETTYPE int
 #include "test-fprintf-posix.h"
 
 int
 main (_GL_UNUSED int argc, char *argv[])
 {
   test_function (xfprintf);
-  return 0;
+  return test_exit_status;
 }

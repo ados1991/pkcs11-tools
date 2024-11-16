@@ -1,9 +1,9 @@
 /* Test of getter for RLIMIT_AS.
-   Copyright (C) 2011-2021 Free Software Foundation, Inc.
+   Copyright (C) 2011-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -62,8 +62,14 @@ main ()
       ASSERT (value3 >= value2);
 
       /* Allocating 2.5 MB of memory should increase the address space size.  */
-      ASSERT (value3 > value1);
+      #ifdef _AIX
+      /* Except on AIX in 32-bit mode, where a single interval is used for
+         malloc and for the stack.  malloc() blocks are taken from the bottom
+         of this interval.  The stack sits at its top.  */
+      if (sizeof (void *) > 4)
+      #endif
+        ASSERT (value3 > value1);
 
-      return 0;
+      return test_exit_status;
     }
 }

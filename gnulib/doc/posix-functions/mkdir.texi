@@ -1,10 +1,12 @@
 @node mkdir
-@section @code{mkdir}
+@subsection @code{mkdir}
 @findex mkdir
 
-POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9699919799/functions/mkdir.html}
+POSIX specification:@* @url{https://pubs.opengroup.org/onlinepubs/9799919799/functions/mkdir.html}
 
 Gnulib module: sys_stat or mkdir
+@mindex sys_stat
+@mindex mkdir
 
 Portability problems fixed by either Gnulib module @code{sys_stat} or @code{mkdir}:
 @itemize

@@ -1,10 +1,10 @@
 /* Unicode character output to streams with locale dependent encoding.
 
-   Copyright (C) 2000-2003, 2006, 2008-2021 Free Software Foundation, Inc.
+   Copyright (C) 2000-2003, 2006, 2008-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -144,7 +144,7 @@ unicode_to_mb (unsigned int code,
 # endif
           /* FreeBSD iconv(), NetBSD iconv(), and Solaris 11 iconv() insert
              a '?' if they cannot convert.  */
-# if !defined _LIBICONV_VERSION
+# if !defined _LIBICONV_VERSION || (_LIBICONV_VERSION == 0x10b && defined __APPLE__)
           || (res > 0 && outptr - outbuf == 1 && *outbuf == '?')
 # endif
           /* musl libc iconv() inserts a '*' if it cannot convert.  */
@@ -154,17 +154,10 @@ unicode_to_mb (unsigned int code,
          )
         return failure (code, NULL, callback_arg);
 
-      /* Avoid glibc-2.1 bug and Solaris 7 bug.  */
-# if defined _LIBICONV_VERSION \
-    || !(((__GLIBC__ - 0 == 2 && __GLIBC_MINOR__ - 0 <= 1) \
-          && !defined __UCLIBC__) \
-         || defined __sun)
-
       /* Get back to the initial shift state.  */
       res = iconv (utf8_to_local, NULL, NULL, &outptr, &outbytesleft);
       if (res == (size_t)(-1))
         return failure (code, NULL, callback_arg);
-# endif
 
       return success (outbuf, outptr - outbuf, callback_arg);
     }

@@ -1,9 +1,9 @@
 /* Test of bitset.
-   Copyright (C) 2018-2021 Free Software Foundation, Inc.
+   Copyright (C) 2018-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -274,7 +274,7 @@ check_zero (bitset bs)
   /* FOR_EACH.  */
   {
     bitset_iterator iter;
-    bitset_bindex i;
+    _GL_UNUSED bitset_bindex i;
     BITSET_FOR_EACH (iter, bs, i, 0)
       ASSERT (0);
     BITSET_FOR_EACH_REVERSE (iter, bs, i, 0)
@@ -425,5 +425,5 @@ int main (void)
   compare (BITSET_VARIABLE, BITSET_GREEDY);
 
   bitset_stats_dump (stderr);
-  return 0;
+  return test_exit_status;
 }

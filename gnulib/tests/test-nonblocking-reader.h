@@ -1,10 +1,10 @@
 /* The reader part of a test program for non-blocking communication.
 
-   Copyright (C) 2011-2021 Free Software Foundation, Inc.
+   Copyright (C) 2011-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -74,6 +74,7 @@ full_read (size_t fd, void *buf, size_t count)
       END_TIMING
       dbgfprintf (stderr, "%s: << read -> %ld%s\n", PROG_ROLE,
                   (long) ret, dbgstrerror (ret < 0, saved_errno));
+      (void) spent_time;
       if (ret < 0)
         return -1;
       else

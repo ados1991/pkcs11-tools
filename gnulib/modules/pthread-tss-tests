@@ -6,10 +6,12 @@ Depends-on:
 pthread-thread
 pthread-mutex
 sched_yield
+random
 
 configure.ac:
+AC_CHECK_DECLS_ONCE([alarm])
 
 Makefile.am:
 TESTS += test-pthread-tss
 check_PROGRAMS += test-pthread-tss
-test_pthread_tss_LDADD = $(LDADD) @LIBPMULTITHREAD@ @LIB_SCHED_YIELD@
+test_pthread_tss_LDADD = $(LDADD) @LIBPMULTITHREAD@ @SCHED_YIELD_LIB@

@@ -1,5 +1,5 @@
 /* Character set conversion with error handling.
-   Copyright (C) 2001-2021 Free Software Foundation, Inc.
+   Copyright (C) 2001-2024 Free Software Foundation, Inc.
    Written by Bruno Haible and Simon Josefsson.
 
    This file is free software: you can redistribute it and/or modify
@@ -21,7 +21,6 @@
 #include "striconveh.h"
 
 #include <errno.h>
-#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -51,17 +50,6 @@ iconveh_open (const char *to_codeset, const char *from_codeset, iconveh_t *cdp)
   iconv_t cd1;
   iconv_t cd2;
 
-  /* Avoid glibc-2.1 bug with EUC-KR.  */
-# if ((__GLIBC__ == 2 && __GLIBC_MINOR__ <= 1) && !defined __UCLIBC__) \
-     && !defined _LIBICONV_VERSION
-  if (c_strcasecmp (from_codeset, "EUC-KR") == 0
-      || c_strcasecmp (to_codeset, "EUC-KR") == 0)
-    {
-      errno = EINVAL;
-      return -1;
-    }
-# endif
-
   cd = iconv_open (to_codeset, from_codeset);
 
   if (STRCASEEQ (from_codeset, "UTF-8", 'U','T','F','-','8',0,0,0,0))
@@ -82,7 +70,8 @@ iconveh_open (const char *to_codeset, const char *from_codeset, iconveh_t *cdp)
   if (STRCASEEQ (to_codeset, "UTF-8", 'U','T','F','-','8',0,0,0,0)
 # if (((__GLIBC__ == 2 && __GLIBC_MINOR__ >= 2) || __GLIBC__ > 2) \
       && !defined __UCLIBC__) \
-     || _LIBICONV_VERSION >= 0x0105
+     || _LIBICONV_VERSION >= 0x0105 \
+     || defined ICONV_SET_TRANSLITERATE
       || c_strcasecmp (to_codeset, "UTF-8//TRANSLIT") == 0
 # endif
      )
@@ -139,11 +128,12 @@ iconveh_close (const iconveh_t *cd)
 /* iconv_carefully is like iconv, except that it stops as soon as it encounters
    a conversion error, and it returns in *INCREMENTED a boolean telling whether
    it has incremented the input pointers past the error location.  */
-# if !defined _LIBICONV_VERSION && !(defined __GLIBC__ && !defined __UCLIBC__)
+# if !(defined _LIBICONV_VERSION && !(_LIBICONV_VERSION == 0x10b && defined __APPLE__)) \
+     && !(defined __GLIBC__ && !defined __UCLIBC__)
 /* Irix iconv() inserts a NUL byte if it cannot convert.
    NetBSD iconv() inserts a question mark if it cannot convert.
-   Only GNU libiconv and GNU libc are known to prefer to fail rather
-   than doing a lossy conversion.  */
+   Only GNU libiconv (excluding the bastard Apple iconv) and GNU libc are
+   known to prefer to fail rather than doing a lossy conversion.  */
 static size_t
 iconv_carefully (iconv_t cd,
                  const char **inbuf, size_t *inbytesleft,
@@ -247,11 +237,12 @@ iconv_carefully_1 (iconv_t cd,
 
   *inbuf = inptr;
   *inbytesleft = inptr_end - inptr;
-# if !defined _LIBICONV_VERSION && !(defined __GLIBC__ && !defined __UCLIBC__)
+# if !(defined _LIBICONV_VERSION && !(_LIBICONV_VERSION == 0x10b && defined __APPLE__)) \
+     && !(defined __GLIBC__ && !defined __UCLIBC__)
   /* Irix iconv() inserts a NUL byte if it cannot convert.
      NetBSD iconv() inserts a question mark if it cannot convert.
-     Only GNU libiconv and GNU libc are known to prefer to fail rather
-     than doing a lossy conversion.  */
+     Only GNU libiconv (excluding the bastard Apple iconv) and GNU libc are
+     known to prefer to fail rather than doing a lossy conversion.  */
   if (res != (size_t)(-1) && res > 0)
     {
       /* iconv() has already incremented INPTR.  We cannot go back to a
@@ -404,13 +395,8 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
     const char *inptr = src;
     size_t insize = srclen;
 
-    /* Avoid glibc-2.1 bug and Solaris 2.7-2.9 bug.  */
-# if defined _LIBICONV_VERSION \
-     || !(((__GLIBC__ == 2 && __GLIBC_MINOR__ <= 1) && !defined __UCLIBC__) \
-          || defined __sun)
     /* Set to the initial state.  */
     iconv (cd, NULL, NULL, NULL, NULL);
-# endif
 
     while (insize > 0)
       {
@@ -457,13 +443,18 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
                 if (cd2 == (iconv_t)(-1))
                   {
                     /* TO_CODESET is UTF-8.  */
-                    /* Error handling can produce up to 1 byte of output.  */
-                    if (length + 1 + extra_alloc > allocated)
+                    /* Error handling can produce up to 1 or 3 bytes of
+                       output.  */
+                    size_t extra_need =
+                      (handler == iconveh_replacement_character ? 3 : 1);
+                    if (length + extra_need + extra_alloc > allocated)
                       {
                         char *memory;
 
                         allocated = 2 * allocated;
-                        if (length + 1 + extra_alloc > allocated)
+                        if (length + extra_need + extra_alloc > allocated)
+                          allocated = 2 * allocated;
+                        if (length + extra_need + extra_alloc > allocated)
                           abort ();
                         if (result == initial_result)
                           memory = (char *) malloc (allocated);
@@ -482,7 +473,7 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
                         grow = false;
                       }
                     /* The input is invalid in FROM_CODESET.  Eat up one byte
-                       and emit a question mark.  */
+                       and emit a replacement character or a question mark.  */
                     if (!incremented)
                       {
                         if (insize == 0)
@@ -490,8 +481,19 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
                         inptr++;
                         insize--;
                       }
-                    result[length] = '?';
-                    length++;
+                    if (handler == iconveh_replacement_character)
+                      {
+                        /* U+FFFD in UTF-8 encoding.  */
+                        result[length+0] = '\357';
+                        result[length+1] = '\277';
+                        result[length+2] = '\275';
+                        length += 3;
+                      }
+                    else
+                      {
+                        result[length] = '?';
+                        length++;
+                      }
                   }
                 else
                   goto indirectly;
@@ -594,23 +596,18 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
   {
     const bool slowly = (offsets != NULL || handler == iconveh_error);
 # define utf8bufsize 4096 /* may also be smaller or larger than tmpbufsize */
-    char utf8buf[utf8bufsize + 1];
+    char utf8buf[utf8bufsize + 3];
     size_t utf8len = 0;
     const char *in1ptr = src;
     size_t in1size = srclen;
     bool do_final_flush1 = true;
     bool do_final_flush2 = true;
 
-    /* Avoid glibc-2.1 bug and Solaris 2.7-2.9 bug.  */
-# if defined _LIBICONV_VERSION \
-     || !(((__GLIBC__ == 2 && __GLIBC_MINOR__ <= 1) && !defined __UCLIBC__) \
-          || defined __sun)
     /* Set to the initial state.  */
     if (cd1 != (iconv_t)(-1))
       iconv (cd1, NULL, NULL, NULL, NULL);
     if (cd2 != (iconv_t)(-1))
       iconv (cd2, NULL, NULL, NULL, NULL);
-# endif
 
     while (in1size > 0 || do_final_flush1 || utf8len > 0 || do_final_flush2)
       {
@@ -682,8 +679,8 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
             && errno == EILSEQ && handler != iconveh_error)
           {
             /* The input is invalid in FROM_CODESET.  Eat up one byte and
-               emit a question mark.  Room for the question mark was allocated
-               at the end of utf8buf.  */
+               emit a U+FFFD character or a question mark.  Room for this
+               character was allocated at the end of utf8buf.  */
             if (!incremented1)
               {
                 if (in1size == 0)
@@ -691,7 +688,16 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
                 in1ptr++;
                 in1size--;
               }
-            *out1ptr++ = '?';
+            if (handler == iconveh_replacement_character)
+              {
+                /* U+FFFD in UTF-8 encoding.  */
+                out1ptr[0] = '\357';
+                out1ptr[1] = '\277';
+                out1ptr[2] = '\275';
+                out1ptr += 3;
+              }
+            else
+              *out1ptr++ = '?';
             res1 = 0;
           }
         errno1 = errno;
@@ -756,7 +762,7 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
                       break;
                     else if (errno == EILSEQ && handler != iconveh_error)
                       {
-                        /* Error handling can produce up to 10 bytes of ASCII
+                        /* Error handling can produce up to 10 bytes of UTF-8
                            output.  But TO_CODESET may be UCS-2, UTF-16 or
                            UCS-4, so use CD2 here as well.  */
                         char scratchbuf[10];
@@ -786,7 +792,7 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
 
                         if (handler == iconveh_escape_sequence)
                           {
-                            static char hex[16] = "0123456789ABCDEF";
+                            static char const hex[16] = "0123456789ABCDEF";
                             scratchlen = 0;
                             scratchbuf[scratchlen++] = '\\';
                             if (uc < 0x10000)
@@ -804,6 +810,14 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
                             scratchbuf[scratchlen++] = hex[(uc>>4) & 15];
                             scratchbuf[scratchlen++] = hex[uc & 15];
                           }
+                        else if (handler == iconveh_replacement_character)
+                          {
+                            /* U+FFFD in UTF-8 encoding.  */
+                            scratchbuf[0] = '\357';
+                            scratchbuf[1] = '\277';
+                            scratchbuf[2] = '\275';
+                            scratchlen = 3;
+                          }
                         else
                           {
                             scratchbuf[0] = '?';
@@ -813,9 +827,45 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
                         inptr = scratchbuf;
                         insize = scratchlen;
                         if (cd2 != (iconv_t)(-1))
-                          res = iconv (cd2,
-                                       (ICONV_CONST char **) &inptr, &insize,
-                                       &out2ptr, &out2size);
+                          {
+                            char *out2ptr_try = out2ptr;
+                            size_t out2size_try = out2size;
+                            res = iconv (cd2,
+                                         (ICONV_CONST char **) &inptr, &insize,
+                                         &out2ptr_try, &out2size_try);
+                            if (handler == iconveh_replacement_character
+                                && (res == (size_t)(-1)
+                                    ? errno == EILSEQ
+                                    /* FreeBSD iconv(), NetBSD iconv(), and
+                                       Solaris 11 iconv() insert a '?' if they
+                                       cannot convert.  This is what we want.
+                                       But IRIX iconv() inserts a NUL byte if it
+                                       cannot convert.
+                                       And musl libc iconv() inserts a '*' if it
+                                       cannot convert.  */
+                                    : (res > 0
+                                       && !(out2ptr_try - out2ptr == 1
+                                            && *out2ptr == '?'))))
+                              {
+                                /* The iconv() call failed.
+                                   U+FFFD can't be converted to TO_CODESET.
+                                   Use '?' instead.  */
+                                scratchbuf[0] = '?';
+                                scratchlen = 1;
+                                inptr = scratchbuf;
+                                insize = scratchlen;
+                                res = iconv (cd2,
+                                             (ICONV_CONST char **) &inptr, &insize,
+                                             &out2ptr, &out2size);
+                              }
+                            else
+                              {
+                                /* Accept the results of the iconv() call.  */
+                                out2ptr = out2ptr_try;
+                                out2size = out2size_try;
+                                res = 0;
+                              }
+                          }
                         else
                           {
                             /* TO_CODESET is UTF-8.  */
@@ -879,12 +929,15 @@ mem_cd_iconveh_internal (const char *src, size_t srclen,
                               }
                             length = out2ptr - result;
                           }
-# if !defined _LIBICONV_VERSION && !(defined __GLIBC__ && !defined __UCLIBC__)
-                        /* Irix iconv() inserts a NUL byte if it cannot convert.
-                           NetBSD iconv() inserts a question mark if it cannot
-                           convert.
-                           Only GNU libiconv and GNU libc are known to prefer
-                           to fail rather than doing a lossy conversion.  */
+# if !(defined _LIBICONV_VERSION && !(_LIBICONV_VERSION == 0x10b && defined __APPLE__)) \
+     && !(defined __GLIBC__ && !defined __UCLIBC__)
+                        /* IRIX iconv() inserts a NUL byte if it cannot convert.
+                           FreeBSD iconv(), NetBSD iconv(), and Solaris 11
+                           iconv() insert a '?' if they cannot convert.
+                           musl libc iconv() inserts a '*' if it cannot convert.
+                           Only GNU libiconv (excluding the bastard Apple iconv)
+                           and GNU libc are known to prefer to fail rather than
+                           doing a lossy conversion.  */
                         if (res != (size_t)(-1) && res > 0)
                           {
                             errno = EILSEQ;

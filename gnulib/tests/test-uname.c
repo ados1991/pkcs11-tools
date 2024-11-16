@@ -1,9 +1,9 @@
 /* Test of system information.
-   Copyright (C) 2009-2021 Free Software Foundation, Inc.
+   Copyright (C) 2009-2024 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -60,5 +60,5 @@ main (int argc, char *argv[])
       printf ("uname -m = machine or cpu = %s\n", buf.machine);
     }
 
-  return 0;
+  return test_exit_status;
 }
